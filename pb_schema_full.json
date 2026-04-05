@@ -1,0 +1,109 @@
+[
+  {
+    "name": "operadores",
+    "type": "auth",
+    "system": false,
+    "schema": [
+      { "name": "dni", "type": "text", "required": true, "unique": true, "options": { "min": 8, "max": 8, "pattern": "^[0-9]{8}$" } },
+      { "name": "nombre", "type": "text", "required": true },
+      { "name": "perfil", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["MESA_PARTES", "OPERADOR", "JEFE", "ADMINISTRADOR", "OTI"] } },
+      { "name": "sede", "type": "relation", "options": { "collectionId": "sedes_collection_id", "maxSelect": 1 } }
+    ],
+    "listRule": "id = @request.auth.id || @request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
+    "viewRule": "id = @request.auth.id || @request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
+    "createRule": "@request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
+    "updateRule": "id = @request.auth.id || @request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
+    "deleteRule": "@request.auth.perfil = 'OTI'"
+  },
+  {
+    "name": "sedes",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "name": "nombre", "type": "text", "required": true, "unique": true },
+      { "name": "es_centro_entrega", "type": "bool" }
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "@request.auth.perfil = 'OTI'",
+    "updateRule": "@request.auth.perfil = 'OTI'",
+    "deleteRule": "@request.auth.perfil = 'OTI'"
+  },
+  {
+    "name": "expedientes",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "name": "operador", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1 } },
+      { "name": "dni_ruc_remitente", "type": "text", "required": true },
+      { "name": "remitente", "type": "text", "required": true },
+      { "name": "tipo_documento", "type": "select", "options": { "maxSelect": 1, "values": ["Oficio", "Memorándum", "Carta", "Expediente", "Otro"] } },
+      { "name": "numero_doc", "type": "text", "required": true },
+      { "name": "asunto", "type": "text" },
+      { "name": "estado", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["RECIBIDO", "DERIVADO", "EN PROCESO", "OBSERVADO", "RECHAZADO", "ATENDIDO", "ARCHIVADO", "ENTREGADO"] } },
+      { "name": "area_destino", "type": "text", "required": true },
+      { "name": "observaciones", "type": "text" },
+      { "name": "fecha_registro", "type": "date", "required": true },
+      { "name": "fecha_entrega", "type": "date" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": "@request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'"
+  },
+  {
+    "name": "historial_acciones",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "name": "expediente_id", "type": "text", "required": true },
+      { "name": "expediente_dni", "type": "text" },
+      { "name": "operador_id", "type": "text", "required": true },
+      { "name": "operador_nombre", "type": "text" },
+      { "name": "operador_perfil", "type": "text" },
+      { "name": "accion", "type": "text", "required": true },
+      { "name": "fecha", "type": "date", "required": true },
+      { "name": "estado_anterior", "type": "text" },
+      { "name": "estado_nuevo", "type": "text" },
+      { "name": "detalles", "type": "text" },
+      { "name": "ip_publica", "type": "text" },
+      { "name": "user_agent", "type": "text" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''"
+  },
+  {
+    "name": "historial_documentos",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "name": "expediente_id", "type": "text", "required": true },
+      { "name": "accion", "type": "text" },
+      { "name": "detalles", "type": "text" },
+      { "name": "fecha", "type": "date" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''"
+  },
+  {
+    "name": "reportes_generados",
+    "type": "base",
+    "system": false,
+    "schema": [
+      { "name": "generado_por", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1 } },
+      { "name": "generado_por_nombre", "type": "text" },
+      { "name": "tipo_reporte", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["REPORTE_DIARIO", "ENTREGA_DIARIA", "REPORTE_MENSUAL"] } },
+      { "name": "fecha_reporte", "type": "text", "required": true },
+      { "name": "total_registros", "type": "number" },
+      { "name": "sede", "type": "text" },
+      { "name": "hash_verificacion", "type": "text", "required": true, "unique": true },
+      { "name": "snapshot", "type": "json" }
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "",
+    "createRule": "@request.auth.id != ''"
+  }
+]
