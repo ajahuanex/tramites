@@ -14,11 +14,15 @@ export class PocketbaseService {
     this.pb = new PocketBase('/');
     this.pb.autoCancellation(false);
 
-    // Parche de compatibilidad: Eliminar 'skipTotal' que causa 400 en servidores PB antiguos
+    // Parche de compatibilidad: Eliminar 'skipTotal' y limitar 'perPage' a 200
     const originalSend = this.pb.send.bind(this.pb);
     this.pb.send = async (path: string, options: any) => {
-      if (options?.query && 'skipTotal' in options.query) {
-        delete options.query.skipTotal;
+      if (options?.query) {
+        if ('skipTotal' in options.query) delete options.query.skipTotal;
+        if (options.query.perPage > 200) {
+          console.warn(`[PB PATCH] Limitando perPage de ${options.query.perPage} a 200 para compatibilidad.`);
+          options.query.perPage = 200;
+        }
       }
       return originalSend(path, options);
     };
