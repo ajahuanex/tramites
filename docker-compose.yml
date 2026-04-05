@@ -6,7 +6,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile.local
-    container_name: drtc_frontend
+    container_name: tramites_frontend
     restart: unless-stopped
     ports:
       - "8087:80"
@@ -16,7 +16,7 @@ services:
   # SERVICIO DEL BACKEND (POCKETBASE)
   pocketbase:
     image: ghcr.io/muchobien/pocketbase:latest
-    container_name: drtc_pocketbase
+    container_name: tramites_pocketbase
     restart: unless-stopped
     ports:
       - "8094:8090"

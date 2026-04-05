@@ -48,10 +48,28 @@ server {
 2. Genera el bundle: `npm run build`
 3. Sube el contenido de `dist/tramites-app/browser` a la carpeta `root` de tu servidor Nginx.
 
-## 5. Despliegue Rápido con Docker Compose (RECOMENDADO)
-1. Sube el código fuente al servidor.
-2. Asegúrate de que `docker-compose.yml` use el puerto **8087** para el frontend y **8094** para el backend.
-3. Ejecución: `docker-compose up -d --build`
+## 5. Despliegue Rápido (Compilación Local + Subida de dist)
+Este es el método que prefieres para ahorrar recursos en el servidor remoto:
 
-## 6. Resumen de Código y API
-- **Configuración API**: El servicio `PocketBaseService` detecta automáticamente la URL del proxy basada en la ubicación del navegador (`/pb-api`). No es necesario editar archivos `.ts` para desplegar en diferentes dominios.
+1. **En tu máquina local**: 
+   - Ejecuta `npm run build`.
+2. **Subir al servidor remoto** (Vía SFTP/SCP/Rsync):
+   - Carpeta `dist/tramites-app/browser/`
+   - Archivo `docker-compose.yml`
+   - Archivo `Dockerfile.local`
+   - Archivo `nginx-custom.conf`
+   - Carpeta `pocketbase/pb_data/` (Si ya tienes datos configurados).
+3. **En el servidor remoto**:
+   - Ejecuta: `docker compose up -d --build`
+
+## 6. Despliegue en Remoto (Directo via SSH)
+Si tienes el código en local y quieres desplegarlo en una sola línea usando `docker context`:
+
+```bash
+# 1. Crear contexto (solo la primera vez)
+docker context create remoto --docker "host=ssh://usuario@ip-del-servidor"
+docker context use remoto
+
+# 2. Desplegar (usará tus archivos locales para construir la imagen remota)
+docker compose up -d --build
+```

@@ -16,7 +16,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [2/2] Iniciando contenedores Docker...
-docker-compose up -d --build
+docker compose up -d --build
 
 echo.
 echo =======================================================
@@ -25,7 +25,7 @@ echo   Pocketbase: http://localhost:8094/_/ (Admin)
 echo =======================================================
 echo.
 echo Los contenedores estan corriendo en segundo plano.
-echo Para ver los logs: docker-compose logs -f
-echo Para detener: docker-compose down
+echo Para ver los logs: docker compose logs -f
+echo Para detener: docker compose down
 echo.
 pause
