@@ -1,4 +1,5 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import PocketBase from 'pocketbase';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -14,6 +15,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { PocketbaseService } from '../core/services/pocketbase.service';
 import { DocumentoService } from '../core/services/documento.service';
 import { ESTADOS_SISTEMA, PERFILES_SISTEMA } from '../core/constants/app.constants';
+import { FULL_PB_SCHEMA } from '../core/constants/pb-schema.constants';
 
 // ─── Sync Modal ───────────────────────────────────────────────────────────────
 @Component({
@@ -91,267 +93,37 @@ export class AdminAuthModal {
 
     try {
       const { email, password } = this.form.value;
-      // Use pb.baseURL for proxy compatibility
-      const pbUrl = this.pbService.pb.baseURL;
-      const doFetch = async (path: string, opts: any = {}) => {
-        const { authToken, ...fetchOpts } = opts;
-        const headers: any = { 'Content-Type': 'application/json' };
-        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-        return fetch(pbUrl + path, { ...fetchOpts, headers: { ...headers, ...(fetchOpts.headers || {}) } });
-      };
-      // Authenticate super admin
+      
       this.log('🔐 Autenticando como Super Admin...');
-      const authRes = await doFetch('/api/collections/_superusers/auth-with-password', {
-        method: 'POST',
-        body: JSON.stringify({ identity: email, password })
-      });
-      if (!authRes.ok) throw new Error('Credenciales inválidas — verifica email y contraseña del admin PocketBase.');
-      const { token } = await authRes.json();
+      // Usamos un cliente temporal para no alterar el authStore del usuario actual
+      const adminClient = new PocketBase(this.pbService.pb.baseUrl);
+      await adminClient.admins.authWithPassword(email!, password!);
+      
       this.log('✅ Autenticado correctamente.');
+      this.log('⏳ Iniciando importación masiva de colecciones...');
 
-      // Admin endpoints
-      const getCol = async (name: string) => {
-        // Intentar listar para obtener el ID real (más seguro en v0.23)
-        const r = await doFetch(`/api/collections?filter=name='${name}'`, { authToken: token });
-        if (r.ok) {
-          const data = await r.json();
-          return data.items && data.items.length > 0 ? data.items[0] : null;
-        }
-        return null;
-      };
-
-      const patchCol = async (idOrName: string, body: any) => {
-        const r = await doFetch(`/api/collections/${idOrName}`, {
-          method: 'PATCH', authToken: token, body: JSON.stringify(body)
-        });
-        if (!r.ok) {
-          const err = await r.text();
-          this.log(`  ⚠ Error PATCH ${idOrName}: ${err}`);
-        }
-        return r.ok;
-      };
-
-      const createCol = async (body: any) => {
-        const r = await doFetch(`/api/collections`, {
-          method: 'POST', authToken: token, body: JSON.stringify(body)
-        });
-        if (!r.ok) { 
-          const errorText = await r.text();
-          this.log(`  ⚠ POST /collections: ${errorText}`); 
-        }
-        return r.ok;
-      };
-
-      const docCol = await getCol('documentos');
-      const opColActual = await getCol('operadores');
+      // Usamos la API de importación masiva que es mucho más robusta
+      // El segundo parámetro 'false' indica que NO borre colecciones que no estén en el JSON
+      await adminClient.collections.import(FULL_PB_SCHEMA as any, false);
       
-      // IDs reales (fallback a nombres si no se encuentran)
-      const docId = docCol?.id || 'documentos';
-      const opId = opColActual?.id || 'operadores';
-
-      // ── 1. documentos ──────────────────────────────────────────────────
-      this.log('');
-      this.log('⏳ [1/4] Verificando "documentos"...');
-      if (docCol) {
-        this.log('  ⏳ Auditando integridad...');
-        let fields = [...docCol.fields];
-        let needsUpdate = false;
-
-        // operador: text -> relation
-        const opField = fields.find((f: any) => f.name === 'operador');
-        if (opField && opField.type !== 'relation') {
-          this.log('  ⚠️ Migrando campo "operador" a relación...');
-          opField.name = 'operador_legacy';
-          fields.push({ 
-            name: 'operador', type: 'relation', required: true, 
-            options: { collectionId: opId, maxSelect: 1, minSelect: 0, cascadeDelete: false } 
-          });
-          needsUpdate = true;
+      this.log('✨ [OPERADORES] Verificando reglas de acceso...');
+      // Aseguramos que los operadores puedan entrar con DNI
+      await adminClient.collections.update('operadores', {
+        authOptions: {
+          allowEmailAuth: false,
+          allowOAuth2Auth: false,
+          allowUsernameAuth: true,
+          requireEmail: false
         }
-
-        // estado: select check
-        const stField = fields.find((f: any) => f.name === 'estado');
-        if (stField) {
-          const current = stField.values || stField.options?.values || [];
-          const missing = ESTADOS_SISTEMA.filter(e => !current.includes(e));
-          if (missing.length) {
-            const merged = [...new Set([...current, ...ESTADOS_SISTEMA])];
-            if (stField.options) stField.options.values = merged;
-            else stField.values = merged;
-            needsUpdate = true;
-          }
-        }
-        
-        if (needsUpdate) {
-          await patchCol(docId, { fields });
-          this.log('  ✅ "documentos" optimizado.');
-        } else {
-          this.log('  ✅ "documentos" — esquema correcto.');
-        }
-      } else {
-        this.log('  ❌ Creando "documentos" desde cero...');
-        await createCol({
-          name: 'documentos', type: 'base', system: false,
-          listRule: '@request.auth.id != ""', viewRule: '@request.auth.id != ""',
-          createRule: '@request.auth.id != ""', updateRule: '@request.auth.id != ""',
-          fields: [
-            { name: 'operador', type: 'relation', required: true, options: { collectionId: opId, maxSelect: 1 } },
-            { name: 'dni_ruc_remitente', type: 'text', required: true },
-            { name: 'remitente', type: 'text', required: true },
-            { name: 'tipo_documento', type: 'text', required: true },
-            { name: 'numero_doc', type: 'text', required: true },
-            { name: 'asunto', type: 'text', required: true },
-            { name: 'area_destino', type: 'text', required: true },
-            { name: 'estado', type: 'select', required: true, values: ESTADOS_SISTEMA },
-            { name: 'fecha_registro', type: 'date', required: true },
-            { name: 'observaciones', type: 'text', required: false }
-          ]
-        });
-      }
-
-      // ── 2. operadores ──────────────────────────────────────────────────
-      this.log('');
-      this.log('⏳ [2/4] Verificando "operadores"...');
-      if (opColActual) {
-        let fields = [...opColActual.fields];
-        let needsUpdate = false;
-
-        // El campo sede debe mantenerse como texto libre para permitir sedes dinámicas
-        const sdField = fields.find((f: any) => f.name === 'sede');
-        if (sdField && sdField.type !== 'text') {
-            this.log('  ⚠️ Migrando campo "sede" a texto libre (soporte dinámico)...');
-            sdField.name = 'sede_legacy_select_sync';
-            fields.push({
-              name: 'sede', type: 'text', required: false
-            });
-            needsUpdate = true;
-        }
-
-        const pfField = fields.find((f: any) => f.name === 'perfil');
-        if (pfField) {
-          const current = pfField.values || pfField.options?.values || [];
-          const missing = PERFILES_SISTEMA.filter(p => !current.includes(p));
-          if (missing.length) {
-            const merged = [...new Set([...current, ...PERFILES_SISTEMA])];
-            if (pfField.options) pfField.options.values = merged;
-            else pfField.values = merged;
-            needsUpdate = true;
-          }
-        }
-        if (needsUpdate) await patchCol(opId, { fields });
-        
-        // Asegurar reglas de Auth y DNI Identity (Soporte pocketbase v0.23)
-        await patchCol(opId, { 
-          listRule: "@request.auth.id != ''", 
-          viewRule: "@request.auth.id != ''", 
-          manageRule: "@request.auth.id != ''",
-          passwordAuth: { identityFields: ['email', 'dni'], enabled: true }
-        });
-        this.log('  ✅ "operadores" — esquema y reglas actualizados.');
-      }
-
-      // ── 3. historial_acciones ──────────────────────────────────────────
-      this.log('');
-      this.log('⏳ [3/4] Verificando "historial_acciones"...');
-      const histCol = await getCol('historial_acciones');
-      if (histCol) {
-        this.log('  ✅ Historial verificado.');
-      }
-
-      // ── 4. reportes_generados ──────────────────────────────────────────
-      this.log('');
-      this.log('⏳ [4/4] Verificando "reportes_generados"...');
-      const repCol = await getCol('reportes_generados');
-      if (repCol) {
-        await patchCol(repCol.id, { viewRule: "" });
-        this.log('  ✅ Reportes parametrizados.');
-      }
-
-      // ── 5. MIGRACIÓN DE DATOS (Legacy -> New) ──────────────────────────
-      this.log('');
-      this.log('🔄 Iniciando migración de datos críticos...');
-      
-      // Migrar Documentos (operador_legacy -> operador)
-      if (docCol) {
-        const freshDoc = await getCol('documentos');
-        const hasOpLegacy = freshDoc?.fields?.some((f: any) => f.name === 'operador_legacy');
-        
-        if (hasOpLegacy) {
-          const legacyDocs = await this.pbService.pb.collection(docId).getFullList({
-            filter: 'operador_legacy != ""',
-            requestKey: 'migracion_doc'
-          }).catch(() => []);
-          
-          if (legacyDocs.length > 0) {
-            this.log(`  📦 Reparando ${legacyDocs.length} relaciones de operador...`);
-            for (const rec of legacyDocs) {
-              if (!rec['operador']) {
-                try {
-                  await this.pbService.pb.collection(docId).update(rec.id, {
-                    operador: rec['operador_legacy']
-                  });
-                } catch (e) {}
-              }
-            }
-          }
-          
-          // Limpieza
-          const remaining = await this.pbService.pb.collection(docId).getList(1, 1, {
-            filter: 'operador_legacy != "" && operador = ""'
-          }).catch(() => ({ totalItems: 0 }));
-          
-          if (remaining.totalItems === 0) {
-            this.log('  🧹 Limpiando esquema: Eliminando "operador_legacy"...');
-            if (freshDoc) {
-              const cleanFields = freshDoc.fields.filter((f: any) => f.name !== 'operador_legacy');
-              await patchCol(docId, { fields: cleanFields });
-            }
-          }
-        }
-      }
-
-      // Migrar Operadores (sede_legacy -> sede)
-      if (opColActual) {
-        const freshOp = await getCol('operadores');
-        const hasSedeLegacy = freshOp?.fields?.some((f: any) => f.name === 'sede_legacy');
-
-        if (hasSedeLegacy) {
-          const legacyOps = await this.pbService.pb.collection(opId).getFullList({
-            filter: 'sede_legacy != "" && sede = ""',
-            requestKey: 'migracion_ops'
-          }).catch(() => []);
-          
-          if (legacyOps.length > 0) {
-            this.log(`  👤 Reparando ${legacyOps.length} sedes de operadores...`);
-            for (const rec of legacyOps) {
-              try {
-                await this.pbService.pb.collection(opId).update(rec.id, {
-                  sede: rec['sede_legacy']
-                });
-              } catch (e) {}
-            }
-          }
-
-          // Limpieza: Eliminar campo legacy si ya no hay datos pendientes
-          const remaining = await this.pbService.pb.collection(opId).getList(1, 1, {
-            filter: 'sede_legacy != "" && sede = ""',
-            requestKey: 'migracion_ops_rem'
-          }).catch(() => ({ totalItems: 0 }));
-          
-          if (remaining.totalItems === 0) {
-            this.log('  🧹 Limpiando esquema: Eliminando "sede_legacy"...');
-            if (freshOp) {
-              const cleanFields = freshOp.fields.filter((f: any) => f.name !== 'sede_legacy');
-              await patchCol(opId, { fields: cleanFields });
-            }
-          }
-        }
-      }
+      });
 
       this.log('');
-      this.log('🎉 Sincronización completada. Sistema único y optimizado.');
+      this.log('🎉 Sincronización completada. El esquema de Trámites está listo.');
+      this.snackBar.open('Sincronización exitosa', 'Cerrar', { duration: 3000 });
     } catch (err: any) {
+      console.error('Sync Error:', err);
       this.log(`❌ Error durante la sincronización: ${err.message || String(err)}`);
+      this.snackBar.open('Error en la sincronización', 'Cerrar', { duration: 5000 });
     } finally {
       this.isRunning.set(false);
     }
