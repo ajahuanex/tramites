@@ -11,11 +11,9 @@ export class PocketbaseService {
   sedesSistema$ = this._sedesSistema.asObservable();
 
   constructor() {
-    // Usamos el prefijo /pb-api para evitar colisiones con otros backends.
-    // El SDK de PocketBase añade automáticamente '/api/' al final del baseURL.
-    // Por lo tanto, las llamadas serán: ORIGIN + /pb-api/api/collections/...
-    // Nginx o el proxy de Vite se encargan de reescribir /pb-api/* -> /*
-    this.pb = new PocketBase('/pb-api');
+    // Usamos el prefijo estándar /api (el SDK lo añade automáticamente al usar '/')
+    // Esto evita la redundancia /pb-api/api y es el estándar de PocketBase.
+    this.pb = new PocketBase('/');
     this.pb.autoCancellation(false);
 
     // Load static data if already authenticated globally
