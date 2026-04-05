@@ -96,7 +96,7 @@ export class AdminAuthModal {
       
       this.log('🔐 Autenticando como Super Admin...');
       // Usamos un cliente temporal para no alterar el authStore del usuario actual
-      const adminClient = new PocketBase(this.pbService.pb.baseUrl);
+      const adminClient = new PocketBase(this.pbService.pb.baseURL);
       await adminClient.admins.authWithPassword(email!, password!);
       
       this.log('✅ Autenticado correctamente.');
