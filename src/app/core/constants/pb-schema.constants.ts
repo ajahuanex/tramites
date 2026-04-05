@@ -2,35 +2,32 @@ export const FULL_PB_SCHEMA = [
   {
     "name": "operadores",
     "type": "auth",
-    "system": false,
-    "schema": [
-      { "name": "dni", "type": "text", "required": true, "unique": true, "options": { "min": 8, "max": 8, "pattern": "^[0-9]{8}$" } },
+    "fields": [
+      { "name": "dni", "type": "text", "required": true, "unique": true, "min": 8, "max": 8, "pattern": "^[0-9]{8}$" },
       { "name": "nombre", "type": "text", "required": true },
-      { "name": "perfil", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["MESA_PARTES", "OPERADOR", "JEFE", "ADMINISTRADOR", "OTI"] } },
+      { "name": "perfil", "type": "select", "required": true, "values": ["MESA_PARTES", "OPERADOR", "JEFE", "ADMINISTRADOR", "OTI"] },
       { "name": "sede", "type": "text" }
     ],
-    "listRule": "id = @request.auth.id || @request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
-    "viewRule": "id = @request.auth.id || @request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
     "updateRule": "id = @request.auth.id || @request.auth.perfil = 'ADMINISTRADOR' || @request.auth.perfil = 'OTI'",
     "deleteRule": "@request.auth.perfil = 'OTI'",
-    "options": {
-        "allowEmailAuth": false,
-        "allowOAuth2Auth": false,
-        "allowUsernameAuth": true,
-        "requireEmail": false
+    "authOptions": {
+      "allowUsernameAuth": true,
+      "allowEmailAuth": false,
+      "requireEmail": false
     }
   },
   {
     "name": "sedes",
     "type": "base",
-    "system": false,
-    "schema": [
+    "fields": [
       { "name": "nombre", "type": "text", "required": true, "unique": true },
       { "name": "es_centro_entrega", "type": "bool" }
     ],
-    "listRule": "",
-    "viewRule": "",
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
     "createRule": "@request.auth.perfil = 'OTI'",
     "updateRule": "@request.auth.perfil = 'OTI'",
     "deleteRule": "@request.auth.perfil = 'OTI'"
@@ -38,15 +35,14 @@ export const FULL_PB_SCHEMA = [
   {
     "name": "expedientes",
     "type": "base",
-    "system": false,
-    "schema": [
-      { "name": "operador", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1 } },
+    "fields": [
+      { "name": "operador", "type": "relation", "required": true, "collectionId": "operadores", "maxSelect": 1 },
       { "name": "dni_ruc_remitente", "type": "text", "required": true },
       { "name": "remitente", "type": "text", "required": true },
-      { "name": "tipo_documento", "type": "select", "options": { "maxSelect": 1, "values": ["Oficio", "Memorándum", "Carta", "Expediente", "Otro"] } },
+      { "name": "tipo_documento", "type": "select", "values": ["Oficio", "Memorándum", "Carta", "Expediente", "Otro"] },
       { "name": "numero_doc", "type": "text", "required": true },
       { "name": "asunto", "type": "text" },
-      { "name": "estado", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["RECIBIDO", "DERIVADO", "EN PROCESO", "OBSERVADO", "RECHAZADO", "ATENDIDO", "ARCHIVADO", "ENTREGADO"] } },
+      { "name": "estado", "type": "select", "required": true, "values": ["RECIBIDO", "DERIVADO", "EN PROCESO", "OBSERVADO", "RECHAZADO", "ATENDIDO", "ARCHIVADO", "ENTREGADO"] },
       { "name": "area_destino", "type": "text", "required": true },
       { "name": "observaciones", "type": "text" },
       { "name": "fecha_registro", "type": "date", "required": true },
@@ -61,8 +57,7 @@ export const FULL_PB_SCHEMA = [
   {
     "name": "historial_acciones",
     "type": "base",
-    "system": false,
-    "schema": [
+    "fields": [
       { "name": "expediente_id", "type": "text", "required": true },
       { "name": "expediente_dni", "type": "text" },
       { "name": "operador_id", "type": "text", "required": true },
@@ -83,8 +78,7 @@ export const FULL_PB_SCHEMA = [
   {
     "name": "historial_documentos",
     "type": "base",
-    "system": false,
-    "schema": [
+    "fields": [
       { "name": "expediente_id", "type": "text", "required": true },
       { "name": "accion", "type": "text" },
       { "name": "detalles", "type": "text" },
@@ -97,11 +91,10 @@ export const FULL_PB_SCHEMA = [
   {
     "name": "reportes_generados",
     "type": "base",
-    "system": false,
-    "schema": [
-      { "name": "generado_por", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1 } },
+    "fields": [
+      { "name": "generado_por", "type": "relation", "required": true, "collectionId": "operadores", "maxSelect": 1 },
       { "name": "generado_por_nombre", "type": "text" },
-      { "name": "tipo_reporte", "type": "select", "required": true, "options": { "maxSelect": 1, "values": ["REPORTE_DIARIO", "ENTREGA_DIARIA", "REPORTE_MENSUAL"] } },
+      { "name": "tipo_reporte", "type": "select", "required": true, "values": ["REPORTE_DIARIO", "ENTREGA_DIARIA", "REPORTE_MENSUAL"] },
       { "name": "fecha_reporte", "type": "text", "required": true },
       { "name": "total_registros", "type": "number" },
       { "name": "sede", "type": "text" },
