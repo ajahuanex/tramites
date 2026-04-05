@@ -96,15 +96,22 @@ export class AdminAuthModal {
       
       this.log('🔐 Autenticando como Super Admin...');
       // Usamos un cliente temporal para no alterar el authStore del usuario actual
-      const adminClient = new PocketBase(this.pbService.pb.baseURL);
+      const baseUrl = this.pbService.getCleanBaseUrl();
+      const adminClient = new PocketBase(baseUrl);
       await adminClient.admins.authWithPassword(email!, password!);
       
       this.log('✅ Autenticado correctamente.');
-      this.log('⏳ Iniciando importación masiva de colecciones...');
-
       // Usamos la API de importación masiva que es mucho más robusta
       // El segundo parámetro 'false' indica que NO borre colecciones que no estén en el JSON
-      await adminClient.collections.import(FULL_PB_SCHEMA as any, false);
+      this.log('⏳ Iniciando importación de colecciones...');
+      await adminClient.collections.import(FULL_PB_SCHEMA as any, false).catch(error => {
+        if (error.data) {
+          console.error('[IMPORT ERROR DETAILS]', error.data);
+          this.log(`❌ Detalle de validación: ${JSON.stringify(error.data)}`);
+          // Si el servidor falla aquí, intentamos un fallback minimalista sin cascadeDelete? No, mejor ver el error.
+        }
+        throw error;
+      });
       
       this.log('✨ [OPERADORES] Verificando reglas de acceso...');
       // Aseguramos que los operadores puedan entrar con DNI
@@ -115,6 +122,8 @@ export class AdminAuthModal {
           allowUsernameAuth: true,
           requireEmail: false
         }
+      }).catch(e => {
+        this.log(`  ⚠ Advertencia en operadores: ${e.message}`);
       });
 
       this.log('');
@@ -123,6 +132,7 @@ export class AdminAuthModal {
     } catch (err: any) {
       console.error('Sync Error:', err);
       this.log(`❌ Error durante la sincronización: ${err.message || String(err)}`);
+      if (err.data) this.log(`⚠️ Detalles: ${JSON.stringify(err.data)}`);
       this.snackBar.open('Error en la sincronización', 'Cerrar', { duration: 5000 });
     } finally {
       this.isRunning.set(false);
@@ -140,7 +150,8 @@ export class AdminAuthModal {
     
     try {
       this.log('🔐 Autenticando para Backup...');
-      const authRes = await fetch(this.pbService.pb.baseURL + '/api/collections/_superusers/auth-with-password', {
+      const baseUrl = this.pbService.getCleanBaseUrl();
+      const authRes = await fetch(`${baseUrl}/api/collections/_superusers/auth-with-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identity: email ?? '', password: password ?? '' })
@@ -151,7 +162,7 @@ export class AdminAuthModal {
       const name = `backup_manual_${new Date().getTime()}.zip`;
       this.log(`📦 Creando backup: ${name}...`);
       
-      const res = await fetch(this.pbService.pb.baseURL + '/api/backups', {
+      const res = await fetch(`${baseUrl}/api/backups`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ name })
@@ -189,7 +200,8 @@ export class AdminAuthModal {
     this.logs.set([]);
     const { email, password } = this.form.value;
     this.log('🔐 Autenticando como Super Admin para reset...');
-    const authRes = await fetch(this.pbService.pb.baseURL + '/api/collections/_superusers/auth-with-password', {
+    const baseUrl = this.pbService.getCleanBaseUrl();
+    const authRes = await fetch(`${baseUrl}/api/collections/_superusers/auth-with-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identity: email ?? '', password: password ?? '' })
@@ -204,7 +216,8 @@ export class AdminAuthModal {
       const { authToken, ...fetchOpts } = opts;
       const headers: any = { 'Content-Type': 'application/json' };
       if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-      return fetch(this.pbService.pb.baseURL + path, { ...fetchOpts, headers: { ...headers, ...(fetchOpts.headers || {}) } });
+      const fullPath = path.startsWith('/') ? `${baseUrl}${path}` : `${baseUrl}/${path}`;
+      return fetch(fullPath, { ...fetchOpts, headers: { ...headers, ...(fetchOpts.headers || {}) } });
     };
     const deleteColRecords = async (name: string) => {
       let page = 1;

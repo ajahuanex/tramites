@@ -58,7 +58,7 @@ export const FULL_PB_SCHEMA = [
     "name": "historial_acciones",
     "type": "base",
     "fields": [
-      { "name": "expediente_id", "type": "text", "required": true },
+      { "name": "expediente_id", "type": "text" },
       { "name": "expediente_dni", "type": "text" },
       { "name": "operador_id", "type": "text", "required": true },
       { "name": "operador_nombre", "type": "text" },

@@ -27,6 +27,9 @@ export class PocketbaseService {
       return originalSend(path, options);
     };
 
+    // Verificador de salud al inicio
+    this.verifyBackend();
+
     // Load static data if already authenticated globally
     if (this.pb.authStore.isValid) {
       this.loadSedes();
@@ -40,6 +43,63 @@ export class PocketbaseService {
         this._sedesSistema.next([]);
       }
     });
+  }
+
+  public getCleanBaseUrl(): string {
+    // Si la URL es '/', devolvemos string vacío para evitar que '//api' se interprete como host host
+    if (this.pb.baseURL === '/') return window.location.origin;
+    // Quitamos la barra final si existe
+    return this.pb.baseURL.endsWith('/') ? this.pb.baseURL.slice(0, -1) : this.pb.baseURL;
+  }
+
+  /**
+   * Herramienta de diagnóstico para el usuario. 
+   * Muestra en consola el estado real del backend y las colecciones.
+   */
+  public async verifyBackend() {
+    console.log('%c[BACKEND VERIFIER] Iniciando pruebas de salud...', 'color: #3b82f6; font-weight: bold;');
+    const baseUrl = this.getCleanBaseUrl();
+    console.log(`[DEBUG] BaseURL configurada: "${this.pb.baseURL}" -> Host detectado: "${baseUrl}"`);
+
+    try {
+      // 1. Prueba de Salud
+      const healthRes = await fetch(`${baseUrl}/api/health`).catch(() => null);
+      if (healthRes) {
+        const health = await healthRes.json();
+        console.log('[DEBUG] Health Check:', health);
+      } else {
+        console.warn('[AVISO] No se pudo acceder a /api/health (posible versión antigua de PB).');
+      }
+
+      // 2. Prueba de Colecciones
+      const sedes = await this.pb.collection('sedes').getList(1, 1).catch(e => e);
+      if (sedes && sedes.items) {
+        console.log(`%c[OK] Conexión a "sedes" establecida. Total: ${sedes.totalItems}`, 'color: #10b981;');
+        if (sedes.items.length > 0) {
+          const item = sedes.items[0];
+          const hasNombre = 'nombre' in item;
+          if (hasNombre) {
+            console.log('%c[OK] El campo "nombre" EXISTE en sedes.', 'color: #10b981;');
+          } else {
+            console.group('%c[CRÍTICO] Error de Esquema detectado', 'color: #ef4444; font-weight: bold;');
+            console.error('El campo "nombre" NO EXISTE en la tabla "sedes".');
+            console.info('Acción requerida: Ir a Configuración -> Sincronizar Esquema.');
+            console.groupEnd();
+          }
+        }
+      } else {
+        console.error('[ERROR] Fallo al listar sedes. ¿La tabla existe? Error:', sedes.message);
+      }
+
+      // 3. Prueba de Límites
+      const testLimit = await fetch(`${baseUrl}/api/collections/sedes/records?perPage=1000`).catch(e => e);
+      if (testLimit && testLimit.status === 400) {
+        console.warn('[INFO] Confirmado: El servidor rechaza perPage=1000. Parche activo.');
+      }
+
+    } catch (err) {
+      console.error('[FATAL] Error en el verificador:', err);
+    }
   }
 
   private async loadSedes() {
