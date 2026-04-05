@@ -23,8 +23,7 @@ export const FULL_PB_SCHEMA = [
     "name": "sedes",
     "type": "base",
     "schema": [
-      { "name": "nombre", "type": "text", "required": true, "unique": true, "options": {} },
-      { "name": "es_centro_entrega", "type": "bool", "options": {} }
+      { "name": "nombre", "type": "text", "required": true, "unique": true, "options": {} }
     ],
     "listRule": "@request.auth.id != ''",
     "viewRule": "@request.auth.id != ''",
@@ -36,7 +35,7 @@ export const FULL_PB_SCHEMA = [
     "name": "expedientes",
     "type": "base",
     "schema": [
-      { "name": "operador", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1, "cascadeDelete": true } },
+      { "name": "operador", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1 } },
       { "name": "dni_ruc_remitente", "type": "text", "required": true, "options": {} },
       { "name": "remitente", "type": "text", "required": true, "options": {} },
       { "name": "tipo_documento", "type": "select", "options": { "values": ["Oficio", "Memorándum", "Carta", "Expediente", "Otro"] } },
@@ -92,7 +91,7 @@ export const FULL_PB_SCHEMA = [
     "name": "reportes_generados",
     "type": "base",
     "schema": [
-      { "name": "generado_por", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1, "cascadeDelete": true } },
+      { "name": "generado_por", "type": "relation", "required": true, "options": { "collectionId": "operadores", "maxSelect": 1 } },
       { "name": "generado_por_nombre", "type": "text", "options": {} },
       { "name": "tipo_reporte", "type": "select", "required": true, "options": { "values": ["REPORTE_DIARIO", "ENTREGA_DIARIA", "REPORTE_MENSUAL"] } },
       { "name": "fecha_reporte", "type": "text", "required": true, "options": {} },

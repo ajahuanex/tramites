@@ -126,9 +126,26 @@ export class AdminAuthModal {
         this.log(`  ⚠ Advertencia en operadores: ${e.message}`);
       });
 
+      this.log('📍 Verificando sedes por defecto...');
+      try {
+        const currentSedes = await adminClient.collection('sedes').getList(1, 1);
+        if (currentSedes.totalItems === 0) {
+          this.log('➕ Creando sede "PUNO" por defecto...');
+          await adminClient.collection('sedes').create({ nombre: 'PUNO' });
+          this.log('✅ Sede "PUNO" creada.');
+        } else {
+          this.log(`✅ Sedes detectadas: ${currentSedes.totalItems}`);
+        }
+      } catch (e: any) {
+        this.log(`  ⚠ Nota: No se pudo auto-inicializar sedes (${e.message}).`);
+      }
+
       this.log('');
       this.log('🎉 Sincronización completada. El esquema de Trámites está listo.');
+      this.log('💡 RECOMENDACIÓN: Si aún ves errores en la lista, borra caché del navegador (F12 > Reload sostenido > Vaciar caché).');
       this.snackBar.open('Sincronización exitosa', 'Cerrar', { duration: 3000 });
+      // Recargar sedes en el componente principal
+      this.pbService.verifyBackend();
     } catch (err: any) {
       console.error('Sync Error:', err);
       this.log(`❌ Error durante la sincronización: ${err.message || String(err)}`);
