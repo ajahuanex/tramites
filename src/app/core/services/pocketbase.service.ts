@@ -11,15 +11,11 @@ export class PocketbaseService {
   sedesSistema$ = this._sedesSistema.asObservable();
 
   constructor() {
-    // Always use the Angular dev server's origin + /pb-api proxy path
-    // Vite proxy forwards /pb-api/* -> http://127.0.0.1:8090/*
-    // This works for both localhost AND phones on the same network
-    // because the Vite server (on the PC) proxies the request to PocketBase
-    const origin = (typeof window !== 'undefined') ? window.location.origin : 'http://localhost:4200';
-    // We now use the root origin. Nginx is configured to proxy /api directly.
-    const baseUrl = origin.replace(/\/+$/, '');
-    console.log('[POCKETBASE] Base URL configurada (Raíz):', baseUrl);
-    this.pb = new PocketBase(baseUrl);
+    // Usamos el prefijo /pb-api para evitar colisiones con otros backends.
+    // El SDK de PocketBase añade automáticamente '/api/' al final del baseURL.
+    // Por lo tanto, las llamadas serán: ORIGIN + /pb-api/api/collections/...
+    // Nginx o el proxy de Vite se encargan de reescribir /pb-api/* -> /*
+    this.pb = new PocketBase('/pb-api');
     this.pb.autoCancellation(false);
 
     // Load static data if already authenticated globally

@@ -12,7 +12,7 @@ Para replicar el despliegue:
 1. Copia la carpeta `pocketbase/pb_data` y el ejecutable `pocketbase` al nuevo servidor.
 2. **IMPORTANTE - ESQUEMA**: Si es una instalación limpia o migración, importa el archivo `pb_schema_full.json` en el panel de Admin (**Settings -> Import collections -> Load from JSON**). Esto creará las tablas `sedes`, `expedientes`, `historial_acciones`, etc.
 3. Ejecuta PocketBase: `./pocketbase serve --http="0.0.0.0:8090"` (Dentro de Docker se mapea al 8094 del host).
-4. **IMPORTANTE**: El frontend está configurado para comunicarse con `/api`, el cual se redirecciona al puerto 8094 del host vía Nginx.
+15. **IMPORTANTE**: El frontend está configurado para comunicarse con `/pb-api`, el cual se redirecciona al puerto de PocketBase vía Nginx (o proxy local de Vite).
 
 ## 3. Configuración de Nginx en el Servidor (Reverse Proxy)
 Si deseas usar un Nginx global en el servidor para servir el frontend y actuar como proxy inverso:
