@@ -241,7 +241,7 @@ export class AdminAuthModal {
     };
 
     // ELIMINACIÓN DE REGISTROS
-    const collectionsToClear = ['reportes_generados', 'historial_acciones', 'documentos'];
+    const collectionsToClear = ['reportes_generados', 'historial_acciones', 'expedientes'];
     
     this.log('🗑️ Vaciando datos de colecciones (conservando tablas)...');
     for (const col of collectionsToClear) {
@@ -492,7 +492,7 @@ export class ConfiguracionesComponent implements OnInit {
     this.processingCierre.set(true);
     try {
       // Fetch all ATENDIDO records
-      const records = await this.pbService.pb.collection('documentos').getFullList({
+      const records = await this.pbService.pb.collection('expedientes').getFullList({
         filter: 'estado = "ATENDIDO"'
       });
 

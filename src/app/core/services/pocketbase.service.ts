@@ -54,51 +54,36 @@ export class PocketbaseService {
 
   /**
    * Herramienta de diagnóstico para el usuario. 
-   * Muestra en consola el estado real del backend y las colecciones.
+   * Muestra en consola el estado real de TODAS las colecciones del sistema.
    */
   public async verifyBackend() {
-    console.log('%c[BACKEND VERIFIER] Iniciando pruebas de salud...', 'color: #3b82f6; font-weight: bold;');
+    console.log('%c[BACKEND VERIFIER] Iniciando diagnóstico de tablas...', 'color: #3b82f6; font-weight: bold;');
     const baseUrl = this.getCleanBaseUrl();
-    console.log(`[DEBUG] BaseURL configurada: "${this.pb.baseURL}" -> Host detectado: "${baseUrl}"`);
+    const tables = ['operadores', 'sedes', 'expedientes', 'historial_acciones', 'reportes_generados'];
 
-    try {
-      // 1. Prueba de Salud
-      const healthRes = await fetch(`${baseUrl}/api/health`).catch(() => null);
-      if (healthRes) {
-        const health = await healthRes.json();
-        console.log('[DEBUG] Health Check:', health);
-      } else {
-        console.warn('[AVISO] No se pudo acceder a /api/health (posible versión antigua de PB).');
-      }
-
-      // 2. Prueba de Colecciones
-      const sedes = await this.pb.collection('sedes').getList(1, 1).catch(e => e);
-      if (sedes && sedes.items) {
-        console.log(`%c[OK] Conexión a "sedes" establecida. Total: ${sedes.totalItems}`, 'color: #10b981;');
-        if (sedes.items.length > 0) {
-          const item = sedes.items[0];
-          const hasNombre = 'nombre' in item;
-          if (hasNombre) {
-            console.log('%c[OK] El campo "nombre" EXISTE en sedes.', 'color: #10b981;');
-          } else {
-            console.group('%c[CRÍTICO] Error de Esquema detectado', 'color: #ef4444; font-weight: bold;');
-            console.error('El campo "nombre" NO EXISTE en la tabla "sedes".');
-            console.info('Acción requerida: Ir a Configuración -> Sincronizar Esquema.');
-            console.groupEnd();
+    for (const table of tables) {
+      try {
+        const res = await this.pb.collection(table).getList(1, 1).catch(e => e);
+        if (res && res.items) {
+          console.log(`%c[OK] Tabla "${table}" EXISTE.`, 'color: #10b981;');
+          // Verificación especial de campos en sedes
+          if (table === 'sedes' && res.items.length > 0) {
+            if (!('nombre' in res.items[0])) {
+              console.error(`%c[ERROR] Tabla "sedes" existe pero le falta la columna "nombre". ¡Sincroniza el esquema!`, 'color: #ef4444;');
+            }
           }
+        } else {
+          console.error(`%c[FAIL] Tabla "${table}" NO EXISTE (Error 404 o 403). Requiere Sincronización.`, 'color: #ef4444; font-weight: bold;');
         }
-      } else {
-        console.error('[ERROR] Fallo al listar sedes. ¿La tabla existe? Error:', sedes.message);
+      } catch (e) {
+        console.log(`%c[WARN] No se pudo verificar la tabla "${table}".`, 'color: #f59e0b;');
       }
+    }
 
-      // 3. Prueba de Límites
-      const testLimit = await fetch(`${baseUrl}/api/collections/sedes/records?perPage=1000`).catch(e => e);
-      if (testLimit && testLimit.status === 400) {
-        console.warn('[INFO] Confirmado: El servidor rechaza perPage=1000. Parche activo.');
-      }
-
-    } catch (err) {
-      console.error('[FATAL] Error en el verificador:', err);
+    // Prueba de Límites
+    const testLimit = await fetch(`${baseUrl}/api/collections/sedes/records?perPage=1000`).catch(e => e);
+    if (testLimit && testLimit.status === 400) {
+      console.log('%c[INFO] Verificación de límites: El servidor rechaza perPage=1000. Parche de compatibilidad activo.', 'color: #3b82f6;');
     }
   }
 
