@@ -65,7 +65,7 @@ import autoTable from 'jspdf-autotable';
         </div>
         <div class="data-item">
           <span class="data-label">Generación</span>
-          <span class="data-value">{{ reporte()!.created | date:'dd/MM/yyyy HH:mm' }}</span>
+          <span class="data-value">{{ reporte()!['created'] | date:'dd/MM/yyyy HH:mm' }}</span>
         </div>
         <div class="data-item">
           <span class="data-label">Área / Sede</span>
@@ -81,7 +81,7 @@ import autoTable from 'jspdf-autotable';
         </div>
         <div class="data-item full">
           <span class="data-label">Firma Digital del Reporte</span>
-          <span class="data-value"><code class="hash">{{ reporte()!.id }}</code></span>
+          <span class="data-value"><code class="hash">{{ reporte()!['id'] }}</code></span>
         </div>
       </div>
 

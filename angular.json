@@ -48,18 +48,14 @@
           },
           "configurations": {
             "production": {
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "1MB",
-                  "maximumError": "2MB"
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
                 },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
-              ],
+                "fonts": true
+              },
               "outputHashing": "all"
             },
             "development": {
@@ -79,10 +75,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "licencias-app:build:production"
+              "buildTarget": "tramites-app:build:production"
             },
             "development": {
-              "buildTarget": "licencias-app:build:development"
+              "buildTarget": "tramites-app:build:development"
             }
           },
           "defaultConfiguration": "development"

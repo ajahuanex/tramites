@@ -356,13 +356,12 @@ export class DiarioComponent implements OnInit, OnDestroy {
         tipo: 'REPORTE_DIARIO',
         registros: this.dataToExport.map((r, i) => ({
           n: i + 1,
-          dni: r['dni_solicitante'] || '',
-          nombre: r['apellidos_nombres'] || '',
-          tramite: r['tramite'] || '',
-          categoria: r['categoria'] || '',
+          remitente: r['remitente'] || 'N/A',
+          tipo_documento: r['tipo_documento'] || '',
+          numero_doc: r['numero_doc'] || '',
+          asunto: r['asunto'] || '',
+          area_destino: r['area_destino'] || '',
           estado: r['estado'] || '',
-          sede: r['lugar_entrega'] || '',
-          operador: r.expand?.['operador']?.nombre || '',
           fecha: this.datePipe.transform(r['fecha_registro'], 'dd/MM/yyyy') || '',
           observaciones: r['observaciones'] || ''
         }))

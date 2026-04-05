@@ -275,7 +275,7 @@ export class GestionDocumentos implements OnInit {
   ];
 
   atencionesDataSource = new MatTableDataSource<any>([]);
-  atencionesColumns = ['num', 'fecha', 'dni', 'nombre', 'tramite', 'lugar', 'estado_actual', 'revertir'];
+  atencionesColumns = ['num', 'fecha', 'remitente', 'documento', 'asunto', 'estado_actual', 'revertir'];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -447,6 +447,50 @@ export class GestionDocumentos implements OnInit {
         if (['OPERADOR', 'JEFE', 'ADMINISTRADOR', 'OTI'].includes(this.userPerfil)) this.loadAtenciones();
       }
     });
+  }
+
+  async marcarComoDerivado(element: any) {
+    this.isLoading.set(true);
+    try {
+      await this.documentoService.updateDocumento(element.id, { estado: 'DERIVADO' }, 'DERIVACION_TRAMITE');
+      this.snackBar.open('Documento marcado como DERIVADO', 'Cerrar', { duration: 3000 });
+      await this.loadData();
+      await this.loadAtenciones();
+    } catch (e: any) {
+      this.snackBar.open('Error: ' + e.message, 'Cerrar', { duration: 4000 });
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async marcarComoAtendido(element: any) {
+    this.isLoading.set(true);
+    try {
+      await this.documentoService.updateDocumento(element.id, { estado: 'ATENDIDO' }, 'ATENCION_TRAMITE');
+      this.snackBar.open('Documento marcado como ATENDIDO', 'Cerrar', { duration: 3000 });
+      await this.loadData();
+      await this.loadAtenciones();
+    } catch (e: any) {
+      this.snackBar.open('Error: ' + e.message, 'Cerrar', { duration: 4000 });
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async revertirAccion(element: any) {
+    if (!confirm('¿Desea revertir el último estado de este documento?')) return;
+    this.isLoading.set(true);
+    try {
+      const estadoAnterior = element.estado_anterior || 'RECIBIDO';
+      await this.documentoService.updateDocumento(element.expediente_id, { estado: estadoAnterior }, 'REVERSION_ACCION');
+      this.snackBar.open('Acción revertida con éxito', 'Cerrar', { duration: 3000 });
+      await this.loadData();
+      await this.loadAtenciones();
+    } catch (e: any) {
+      this.snackBar.open('Error al revertir: ' + e.message, 'Cerrar', { duration: 4000 });
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 
   async deleteDocumento(record: any) {
