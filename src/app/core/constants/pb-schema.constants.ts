@@ -36,7 +36,7 @@ export const FULL_PB_SCHEMA = [
     "name": "expedientes",
     "type": "base",
     "fields": [
-      { "name": "operador", "type": "relation", "required": true, "collectionId": "operadores", "maxSelect": 1 },
+      { "name": "operador", "type": "relation", "required": true, "collectionId": "operadores", "maxSelect": 1, "cascadeDelete": true },
       { "name": "dni_ruc_remitente", "type": "text", "required": true },
       { "name": "remitente", "type": "text", "required": true },
       { "name": "tipo_documento", "type": "select", "values": ["Oficio", "Memorándum", "Carta", "Expediente", "Otro"] },
@@ -92,7 +92,7 @@ export const FULL_PB_SCHEMA = [
     "name": "reportes_generados",
     "type": "base",
     "fields": [
-      { "name": "generado_por", "type": "relation", "required": true, "collectionId": "operadores", "maxSelect": 1 },
+      { "name": "generado_por", "type": "relation", "required": true, "collectionId": "operadores", "maxSelect": 1, "cascadeDelete": true },
       { "name": "generado_por_nombre", "type": "text" },
       { "name": "tipo_reporte", "type": "select", "required": true, "values": ["REPORTE_DIARIO", "ENTREGA_DIARIA", "REPORTE_MENSUAL"] },
       { "name": "fecha_reporte", "type": "text", "required": true },

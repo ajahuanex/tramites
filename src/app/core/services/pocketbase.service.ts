@@ -11,10 +11,17 @@ export class PocketbaseService {
   sedesSistema$ = this._sedesSistema.asObservable();
 
   constructor() {
-    // Usamos el prefijo estándar /api (el SDK lo añade automáticamente al usar '/')
-    // Esto evita la redundancia /pb-api/api y es el estándar de PocketBase.
     this.pb = new PocketBase('/');
     this.pb.autoCancellation(false);
+
+    // Parche de compatibilidad: Eliminar 'skipTotal' que causa 400 en servidores PB antiguos
+    const originalSend = this.pb.send.bind(this.pb);
+    this.pb.send = async (path: string, options: any) => {
+      if (options?.query && 'skipTotal' in options.query) {
+        delete options.query.skipTotal;
+      }
+      return originalSend(path, options);
+    };
 
     // Load static data if already authenticated globally
     if (this.pb.authStore.isValid) {

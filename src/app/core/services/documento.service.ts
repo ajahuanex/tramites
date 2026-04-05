@@ -170,9 +170,9 @@ export class DocumentoService {
   }
 
   private toPbDate(date: Date): string {
-    // PocketBase >= 0.22 strictly requires RFC3339 for system date fields ('updated', 'created')
-    // toISOString gives YYYY-MM-DDTHH:mm:ss.SSSZ. Replacing 'T' with space matches PB convention.
-    return date.toISOString().replace('T', ' ');
+    // PocketBase prefiere YYYY-MM-DD HH:MM:SS para filtros. 
+    // Truncamos milisegundos y la 'Z' para máxima compatibilidad.
+    return date.toISOString().replace('T', ' ').split('.')[0];
   }
 
   /**
