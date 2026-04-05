@@ -119,20 +119,46 @@ export class AdminAuthModal {
         // Si la tabla no existe o falla, no hacemos nada
       }
 
-      this.log('⏳ Sincronizando colecciones una a una...');
+      this.log('⏳ Sincronizando colecciones una a una (con Mapeo Dinámico de IDs v0.26+)...');
+      // Mapa para guardar los verdaderos IDs de las colecciones
+      const collectionIdMap: Record<string, string> = {};
+
+      // PADA 1: Primero creamos TODAS las colecciones sin sus campos "relation"
+      // Esto asegura que todas tengan un ID real, evitando errores circulares o de collectionId inválido.
       for (const col of FULL_PB_SCHEMA) {
         try {
-          // Intentamos obtener la colección para ver si existe
-          const exists = await adminClient.collections.getOne(col.name).catch(() => null);
-          if (exists) {
-            this.log(`  ↻ Actualizando esquema de "${col.name}"...`);
-            await adminClient.collections.update(col.name, col);
-          } else {
-            this.log(`  ➕ Creando tabla "${col.name}"...`);
-            await adminClient.collections.create(col);
+          const colClone = JSON.parse(JSON.stringify(col));
+          // Quitar temporalmente campos de tipo relación
+          colClone.fields = colClone.fields.filter((f: any) => f.type !== 'relation');
+
+          let existing = await adminClient.collections.getOne(col.name).catch(() => null);
+          if (!existing) {
+            this.log(`  ➕ Creando esqueleto de tabla "${col.name}"...`);
+            existing = await adminClient.collections.create(colClone);
           }
+          // Guardamos el ID real que PB asignó internamente (ej: pbc_565577)
+          collectionIdMap[col.name] = existing!.id;
         } catch (colError: any) {
-           this.log(`  ❌ Falló sincronización de "${col.name}": ${colError.message}`);
+           this.log(`  ❌ Falló la inicialización de "${col.name}": ${colError.message}`);
+        }
+      }
+
+      this.log('🔗 Inyectando Relaciones con IDs internos reales...');
+      // PASO 2: Actualizar las colecciones con TODOS sus campos, ahora inyectando el collectionId correcto
+      for (const col of FULL_PB_SCHEMA) {
+        try {
+          const colClone = JSON.parse(JSON.stringify(col));
+          // Inyectar el ID correcto en todos los campos relation
+          colClone.fields.forEach((f: any) => {
+            if (f.type === 'relation' && f.collectionId && collectionIdMap[f.collectionId]) {
+              f.collectionId = collectionIdMap[f.collectionId];
+            }
+          });
+
+          this.log(`  ↻ Actualizando schema completo de "${col.name}"...`);
+          await adminClient.collections.update(collectionIdMap[col.name], colClone);
+        } catch (colError: any) {
+           this.log(`  ❌ Falla final en "${col.name}": ${colError.message}`);
            if (colError.data) {
              this.log(`     Detalles: ${JSON.stringify(colError.data)}`);
            }
