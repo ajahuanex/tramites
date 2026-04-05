@@ -103,12 +103,27 @@ export class AdminAuthModal {
       this.log('✅ Autenticado correctamente.');
       // Usamos la API de importación masiva que es mucho más robusta
       // El segundo parámetro 'false' indica que NO borre colecciones que no estén en el JSON
+      this.log('🧹 Limpiando posibles registros "zombie" de Sedes...');
+      try {
+        // Obtenemos hasta 500 registros de sedes
+        const badSedes = await adminClient.collection('sedes').getList(1, 500);
+        let deleted = 0;
+        for (const item of badSedes.items) {
+          if (!item['nombre'] || item['nombre'].trim() === '') {
+            await adminClient.collection('sedes').delete(item.id);
+            deleted++;
+          }
+        }
+        if (deleted > 0) this.log(`🗑️ Eliminados ${deleted} registros de sedes inválidos.`);
+      } catch (e) {
+        // Si la tabla no existe o falla, no hacemos nada
+      }
+
       this.log('⏳ Iniciando importación de colecciones...');
       await adminClient.collections.import(FULL_PB_SCHEMA as any, false).catch(error => {
         if (error.data) {
           console.error('[IMPORT ERROR DETAILS]', error.data);
           this.log(`❌ Detalle de validación: ${JSON.stringify(error.data)}`);
-          // Si el servidor falla aquí, intentamos un fallback minimalista sin cascadeDelete? No, mejor ver el error.
         }
         throw error;
       });
@@ -462,7 +477,7 @@ export class ConfiguracionesComponent implements OnInit {
   async cargarSedes() {
     this.isLoadingSedes.set(true);
     try {
-      const records = await this.pbService.pb.collection('sedes').getFullList({ sort: 'nombre' });
+      const records = await this.pbService.pb.collection('sedes').getFullList();
       this.sedes.set(records);
     } catch (e: any) {
       if (e.status !== 404 && e.status !== 403) this.snackBar.open('Error cargando sedes: ' + e.message, 'Cerrar');

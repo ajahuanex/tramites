@@ -57,7 +57,7 @@ export class ModalOperador implements OnInit {
 
   async ngOnInit() {
     try {
-      const records = await this.pbService.pb.collection('sedes').getFullList({ sort: 'nombre' });
+      const records = await this.pbService.pb.collection('sedes').getFullList();
       this.sedes = records.map(r => r['nombre']);
     } catch (e) {
       console.warn('Fallback a sedes nativas locales fallido la consulta', e);
