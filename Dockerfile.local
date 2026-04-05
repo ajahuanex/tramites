@@ -7,7 +7,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copiar el build compilado ya existente en la mÃ¡quina local
-COPY dist/licencias-app/browser /usr/share/nginx/html
+COPY dist/tramites-app/browser /usr/share/nginx/html
 
 # Angular 20 con SSR genera index.csr.html para la parte cliente. 
 # Lo renombramos a index.html para que Nginx lo sirva por defecto.

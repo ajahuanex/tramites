@@ -16,7 +16,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copiar el build compilado
-COPY --from=build /app/dist/licencias-app/browser /usr/share/nginx/html
+COPY --from=build /app/dist/tramites-app/browser /usr/share/nginx/html
 
 # Configuracion especial de Nginx para soportar Angular Router
 COPY nginx-custom.conf /etc/nginx/conf.d/default.conf
