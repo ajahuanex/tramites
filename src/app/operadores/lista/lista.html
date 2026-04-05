@@ -1,0 +1,112 @@
+<div class="report-wrapper fade-in">
+  <div class="header-actions">
+    <div class="titles">
+      <h1>Gestión de Operadores</h1>
+      <p>Administra los accesos internos al sistema.</p>
+    </div>
+    <div class="actions">
+      <!-- Search Form -->
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 250px;" class="no-print fade-in">
+        <mat-label>Buscador (DNI, Nombre)</mat-label>
+        <input matInput (input)="searchTerm.set($any($event.target).value)" placeholder="Nombre, DNI, rol...">
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+
+      <button mat-icon-button (click)="loadData(true)" matTooltip="Actualizar">
+        <mat-icon [class.rolling]="isLoading()">sync</mat-icon>
+      </button>
+      <button mat-raised-button color="primary" (click)="openModal()">
+        <mat-icon>person_add</mat-icon>
+        Nuevo Operador
+      </button>
+    </div>
+  </div>
+
+  <mat-card class="mat-elevation-z3">
+    @if (isLoading()) {
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+        <span>Cargando operadores...</span>
+      </div>
+    } @else {
+      <div class="table-container">
+        <table mat-table [dataSource]="filteredOperadores()" class="full-width-table">
+          <!-- DNI Column -->
+          <ng-container matColumnDef="dni">
+            <th mat-header-cell *matHeaderCellDef> DNI </th>
+            <td mat-cell *matCellDef="let element"> <span class="badge">{{element.dni}}</span> </td>
+          </ng-container>
+
+          <!-- Nombre Column -->
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef> Nombre y Apellidos </th>
+            <td mat-cell *matCellDef="let element"> <strong>{{element.nombre | uppercase}}</strong> </td>
+          </ng-container>
+
+          <!-- Perfil Column -->
+          <ng-container matColumnDef="perfil">
+            <th mat-header-cell *matHeaderCellDef> Nivel de Acceso </th>
+            <td mat-cell *matCellDef="let element">
+              <span class="status-chip"
+                    [class.oti]="element.perfil === 'OTI'"
+                    [class.admin]="element.perfil === 'ADMINISTRADOR'"
+                    [class.sup]="element.perfil === 'SUPERVISOR'"
+                    [class.reg]="element.perfil === 'REGISTRADOR'"
+                    [class.ent]="element.perfil === 'ENTREGADOR'">
+                {{element.perfil || 'N/A'}}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Sede Column -->
+          <ng-container matColumnDef="sede">
+            <th mat-header-cell *matHeaderCellDef> Sede Asignada </th>
+            <td mat-cell *matCellDef="let element"> 
+              @if (element.sede) {
+                <span>
+                  <mat-icon style="font-size: 16px; height: 16px; width: 16px; vertical-align: middle;">location_on</mat-icon> 
+                  {{element.sede}}
+                </span>
+              } @else {
+                <span style="color: #94a3b8;">-</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Email Column -->
+          <ng-container matColumnDef="email">
+            <th mat-header-cell *matHeaderCellDef> Email de Acceso </th>
+            <td mat-cell *matCellDef="let element"> {{element.email}} </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="text-right"> Acciones </th>
+            <td mat-cell *matCellDef="let element" class="text-right">
+              @if (isOti()) {
+                <button mat-icon-button color="accent" matTooltip="Actuar como {{element.nombre}}" (click)="actAs(element)" [disabled]="isCurrentUser(element.id)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              }
+              <button mat-icon-button color="primary" matTooltip="Editar" (click)="openModal(element)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" matTooltip="Eliminar" (click)="deleteOperador(element.id)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row-hover"></tr>
+
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell empty-cell" [attr.colspan]="4">
+              Aún no hay operadores registrados o el servicio está desconectado.
+            </td>
+          </tr>
+        </table>
+      </div>
+    }
+  </mat-card>
+</div>

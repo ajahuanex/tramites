@@ -1,0 +1,242 @@
+<div class="page-wrapper fade-in">
+  
+  <div class="header-actions compact">
+    <div class="titles">
+      <h1>Archivo Central</h1>
+      <p class="subtitle">Documentos procesados y listos para archivado (ATENDIDO)</p>
+    </div>
+
+    <div class="header-controls no-print">
+      <div class="location-filter hide-on-mobile">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field">
+          <mat-select [ngModel]="selectedArea()" (ngModelChange)="selectedArea.set($event); onAreaChange()" placeholder="Área">
+            @for (a of areas; track a.value) {
+              <mat-option [value]="a.value">{{ a.label }}</mat-option>
+            }
+          </mat-select>
+          <mat-icon matPrefix>account_tree</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="search-mini hide-on-mobile">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field">
+          <input matInput (input)="searchTerm.set($any($event.target).value)" placeholder="Buscador...">
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="button-group">
+        <button mat-icon-button (click)="loadData()" matTooltip="Actualizar" class="small-icon-btn">
+          <mat-icon [class.rolling]="isLoading()">sync</mat-icon>
+        </button>
+        <button mat-icon-button (click)="mainLayout?.sidenav()?.open()" *ngIf="mainLayout?.isHandset?.()" matTooltip="Filtros" class="small-icon-btn mobile-only-btn" color="primary">
+          <mat-icon>filter_alt</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #mobileFilters>
+    <div class="mobile-filters-container" style="display: flex; flex-direction: column; gap: 12px; padding: 8px 0;">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field full-width">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput (input)="searchTerm.set($any($event.target).value)" placeholder="DNI, Nombre o Nro Doc...">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field full-width">
+        <mat-select [ngModel]="selectedArea()" (ngModelChange)="selectedArea.set($event); onAreaChange()" placeholder="Área">
+          @for (a of areas; track a.value) {
+            <mat-option [value]="a.value">{{ a.label }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>account_tree</mat-icon>
+      </mat-form-field>
+    </div>
+  </ng-template>
+
+  <mat-tab-group animationDuration="0ms">
+    <!-- PESTAÑA: PENDIENTES DE ARCHIVAR -->
+    <mat-tab label="Pendientes de Archivar">
+      <mat-card class="mat-elevation-z3" style="margin-top: 1rem;">
+        @if (isLoading()) {
+          <div class="loading-overlay">
+            <div class="spinner"></div>
+            <span>Cargando documentos pendientes...</span>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table mat-table [dataSource]="filteredRecords()" class="full-width-table">
+              <!-- DNI/RUC -->
+              <ng-container matColumnDef="dni_ruc_remitente">
+                <th mat-header-cell *matHeaderCellDef> DNI / RUC </th>
+                <td mat-cell *matCellDef="let element"> <span class="badge">{{element.dni_ruc_remitente}}</span> </td>
+              </ng-container>
+
+              <!-- Remitente -->
+              <ng-container matColumnDef="remitente">
+                <th mat-header-cell *matHeaderCellDef> Remitente </th>
+                <td mat-cell *matCellDef="let element"> <strong>{{element.remitente}}</strong> </td>
+              </ng-container>
+
+              <!-- Tipo -->
+              <ng-container matColumnDef="tipo_documento">
+                <th mat-header-cell *matHeaderCellDef> Tipo </th>
+                <td mat-cell *matCellDef="let element">
+                  <span class="status-chip">{{element.tipo_documento}}</span>
+                </td>
+              </ng-container>
+
+              <!-- Numero -->
+              <ng-container matColumnDef="numero_doc">
+                <th mat-header-cell *matHeaderCellDef> Nro Documento </th>
+                <td mat-cell *matCellDef="let element"> <span class="status-chip">{{element.numero_doc}}</span> </td>
+              </ng-container>
+
+              <!-- Fecha -->
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef> Fecha Registro </th>
+                <td mat-cell *matCellDef="let element"> {{element.fecha_registro | date:'dd/MM/yyyy'}} </td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="text-right"> Acción </th>
+                <td mat-cell *matCellDef="let element" class="text-right">
+                  @if (canArchive()) {
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                      <button mat-flat-button color="primary" (click)="$event.stopPropagation(); marcarArchivado(element.id)">
+                        <mat-icon>inventory_2</mat-icon> Archivar
+                      </button>
+                    </div>
+                  } @else {
+                    <span class="readonly-badge" matTooltip="Solo Jefes de Área o Admin pueden archivar.">
+                      Cerrado
+                    </span>
+                  }
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row-hover"></tr>
+              
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+                  <mat-icon>inventory</mat-icon>
+                  <p>No hay documentos pendientes de archivar en esta área.</p>
+                </td>
+              </tr>
+            </table>
+          </div>
+        }
+      </mat-card>
+    </mat-tab>
+
+    <!-- PESTAÑA: HISTORIAL ARCHIVADOS -->
+    <mat-tab label="Historial Archivados">
+      <mat-card class="mat-elevation-z3" style="margin-top: 1rem;">
+        <div class="actions-bar" style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid #e0e0e0;">
+           <div class="table-filters" style="display: flex; gap: 12px; align-items: center;">
+             <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 200px;">
+               <mat-label>Rango de Archivamiento</mat-label>
+               <mat-select [ngModel]="selectedRange()" (ngModelChange)="onRangeChange($event)">
+                 <mat-option value="hoy">Hoy</mat-option>
+                 <mat-option value="ayer">Ayer</mat-option>
+                 <mat-option value="semana">Últimos 7 días</mat-option>
+                 <mat-option value="mes">Mes Actual</mat-option>
+                 <mat-option value="historico">Todo el Historial</mat-option>
+               </mat-select>
+               <mat-icon matPrefix>calendar_today</mat-icon>
+             </mat-form-field>
+           </div>
+
+           <div style="display: flex; gap: 8px;">
+             <button mat-stroked-button color="primary" (click)="exportExcel()" [disabled]="archivedRecords().length === 0">
+               <mat-icon>table_view</mat-icon> Excel
+             </button>
+             <button mat-flat-button color="primary" (click)="exportPDF()" [disabled]="archivedRecords().length === 0">
+               <mat-icon>picture_as_pdf</mat-icon> PDF
+             </button>
+           </div>
+        </div>
+        @if (isLoading()) {
+          <div class="loading-overlay">
+            <div class="spinner"></div>
+            <span>Cargando historial...</span>
+          </div>
+        } @else {
+          <div class="table-container">
+            <table mat-table [dataSource]="filteredArchivedRecords()" class="full-width-table">
+              
+              <!-- N° -->
+              <ng-container matColumnDef="num">
+                <th mat-header-cell *matHeaderCellDef> N° </th>
+                <td mat-cell *matCellDef="let element; let i = index"> <strong>{{ (archivedPage() - 1) * archivedPageSize() + i + 1 }}</strong> </td>
+              </ng-container>
+
+              <!-- DNI -->
+              <ng-container matColumnDef="dni_ruc_remitente">
+                <th mat-header-cell *matHeaderCellDef> DNI / RUC </th>
+                <td mat-cell *matCellDef="let element"> <span class="badge">{{element.dni_ruc_remitente}}</span> </td>
+              </ng-container>
+    
+              <!-- Remitente -->
+              <ng-container matColumnDef="remitente">
+                <th mat-header-cell *matHeaderCellDef> Remitente </th>
+                <td mat-cell *matCellDef="let element"> <strong>{{element.remitente}}</strong> </td>
+              </ng-container>
+    
+              <!-- Tipo -->
+              <ng-container matColumnDef="tipo_documento">
+                <th mat-header-cell *matHeaderCellDef> Tipo </th>
+                <td mat-cell *matCellDef="let element">
+                  <span class="status-chip">{{element.tipo_documento}}</span>
+                </td>
+              </ng-container>
+    
+              <!-- Numero -->
+              <ng-container matColumnDef="numero_doc">
+                <th mat-header-cell *matHeaderCellDef> Nro Documento </th>
+                <td mat-cell *matCellDef="let element"> <span class="status-chip">{{element.numero_doc}}</span> </td>
+              </ng-container>
+    
+              <!-- Fecha Archivo -->
+              <ng-container matColumnDef="fecha_archivo">
+                <th mat-header-cell *matHeaderCellDef> Fecha Archivamiento </th>
+                <td mat-cell *matCellDef="let element"> {{ element.updated | date:'dd/MM/yyyy HH:mm' }} </td>
+              </ng-container>
+
+              <!-- Acciones -->
+              <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef class="text-right"> Reversión </th>
+                <td mat-cell *matCellDef="let element" class="text-right">
+                  <button mat-icon-button color="warn" (click)="$event.stopPropagation(); revertirArchivo(element.id)" matTooltip="Deshacer Archivamiento">
+                    <mat-icon>undo</mat-icon>
+                  </button>
+                </td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="archivedColumns; sticky: true"></tr>
+              <tr mat-row *matRowDef="let row; columns: archivedColumns;" class="table-row-hover"></tr>
+              
+              <tr class="mat-row" *matNoDataRow>
+                <td class="mat-cell empty-cell" [attr.colspan]="archivedColumns.length">
+                  <mat-icon>info</mat-icon>
+                  <p>No se encontraron registros archivados.</p>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <mat-paginator [length]="archivedTotalItems()"
+                         [pageSize]="archivedPageSize()"
+                         [pageIndex]="archivedPage() - 1"
+                         [pageSizeOptions]="[5, 10, 20, 50]"
+                         (page)="onPageChange($event)"
+                         showFirstLastButtons
+                         aria-label="Seleccionar página">
+          </mat-paginator>
+        }
+      </mat-card>
+    </mat-tab>
+  </mat-tab-group>
+</div>

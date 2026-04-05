@@ -1,0 +1,182 @@
+[
+  {
+    "id": "q1w2e3r4t5y6u7i",
+    "name": "operadores",
+    "type": "auth",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "qwe234r5",
+        "name": "dni",
+        "type": "text",
+        "required": true,
+        "presentable": true,
+        "unique": true,
+        "options": {
+          "min": 8,
+          "max": 8,
+          "pattern": "^[0-9]{8}$"
+        }
+      },
+      {
+        "system": false,
+        "id": "asr456t7",
+        "name": "nombre",
+        "type": "text",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": 3,
+          "max": 255,
+          "pattern": ""
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX `idx_operadores_dni` ON `operadores` (`dni`)"
+    ],
+    "listRule": "id = @request.auth.id",
+    "viewRule": "id = @request.auth.id",
+    "createRule": null,
+    "updateRule": "id = @request.auth.id",
+    "deleteRule": null,
+    "options": {
+      "allowEmailAuth": false,
+      "allowOAuth2Auth": false,
+      "allowUsernameAuth": true,
+      "exceptEmailDomains": null,
+      "manageRule": null,
+      "minPasswordLength": 8,
+      "onlyEmailDomains": null,
+      "onlyVerified": false,
+      "requireEmail": false
+    }
+  },
+  {
+    "id": "zxcvbnmasdfghjk",
+    "name": "expedientes",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "zxc123v4",
+        "name": "operador",
+        "type": "relation",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "q1w2e3r4t5y6u7i",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      },
+      {
+        "system": false,
+        "id": "bnm456m7",
+        "name": "apellidos_nombres",
+        "type": "text",
+        "required": true,
+        "presentable": true,
+        "unique": false,
+        "options": {
+          "min": 3,
+          "max": 255,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "iop789p0",
+        "name": "tramite",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "Duplicado",
+            "Revalidación"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "lkj098k7",
+        "name": "categoria",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "AI",
+            "AIIA",
+            "AIIB",
+            "AIIIC"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "poi543u2",
+        "name": "lugar_entrega",
+        "type": "select",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "maxSelect": 1,
+          "values": [
+            "Puno",
+            "Juliaca"
+          ]
+        }
+      },
+      {
+        "system": false,
+        "id": "mnb765v4",
+        "name": "observaciones",
+        "type": "text",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": null,
+          "max": null,
+          "pattern": ""
+        }
+      },
+      {
+        "system": false,
+        "id": "ytr432e1",
+        "name": "fecha_registro",
+        "type": "date",
+        "required": true,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "min": "",
+          "max": ""
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX `idx_expedientes_fecha` ON `expedientes` (`fecha_registro`)",
+      "CREATE INDEX `idx_expedientes_nombres` ON `expedientes` (`apellidos_nombres`)"
+    ],
+    "listRule": "@request.auth.id != ''",
+    "viewRule": "@request.auth.id != ''",
+    "createRule": "@request.auth.id != ''",
+    "updateRule": "@request.auth.id != ''",
+    "deleteRule": null,
+    "options": {}
+  }
+]

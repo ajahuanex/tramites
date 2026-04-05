@@ -1,0 +1,365 @@
+<div class="page-wrapper fade-in">
+
+  <!-- Header -->
+  <div class="header-actions compact">
+    <div class="titles">
+      <h1>Gestión de Trámites</h1>
+      @if (!showAdvancedFilter) {
+        <p class="subtitle">({{ currentDate | date:'dd/MM/yyyy' }})</p>
+      }
+      @if (showAdvancedFilter) {
+        <p class="subtitle">({{ startDate | date:'dd/MM/yyyy' }} - {{ endDate | date:'dd/MM/yyyy' }})</p>
+      }
+    </div>
+
+    <div class="header-controls no-print">
+      <div class="date-picker-mini compact-field">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <input matInput [matDatepicker]="picker" [(ngModel)]="currentDate" (dateChange)="loadData()" [disabled]="showAdvancedFilter" placeholder="Fecha">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+        <button mat-icon-button (click)="toggleAdvancedFilter()" [color]="showAdvancedFilter ? 'primary' : ''" matTooltip="Rango" class="small-icon-btn">
+          <mat-icon>tune</mat-icon>
+        </button>
+        <!-- Mobile Filter Action -->
+        <button mat-icon-button (click)="mainLayout?.sidenav()?.open()" *ngIf="mainLayout?.isHandset?.()" matTooltip="Filtros" class="small-icon-btn mobile-only-btn" color="primary">
+          <mat-icon>filter_alt</mat-icon>
+        </button>
+      </div>
+
+      <div class="button-group">
+        <button mat-icon-button (click)="loadData()" matTooltip="Actualizar">
+          <mat-icon [class.rolling]="isLoading()">sync</mat-icon>
+        </button>
+        <button mat-flat-button class="compact-btn excel-btn" (click)="exportExcel()">
+          <mat-icon>table_view</mat-icon> <span class="btn-text">Excel</span>
+        </button>
+        <button mat-flat-button class="compact-btn pdf-btn" (click)="exportPDF()">
+          <mat-icon>picture_as_pdf</mat-icon> <span class="btn-text">PDF</span>
+        </button>
+
+        <!-- Dynamic Actions -->
+        @if (selection.selected.length > 0) {
+          <button mat-flat-button color="accent" class="compact-btn" (click)="marcarMasivo('DERIVADO')" *ngIf="['OPERADOR', 'OTI'].includes(userPerfil)">
+            <mat-icon>forward</mat-icon> <span class="btn-text">Derivar</span> ({{ selection.selected.length }})
+          </button>
+          <button mat-flat-button color="primary" class="compact-btn" (click)="marcarMasivo('ATENDIDO')" *ngIf="['OPERADOR', 'JEFE', 'OTI'].includes(userPerfil)">
+            <mat-icon>done_all</mat-icon> <span class="btn-text">Atender</span> ({{ selection.selected.length }})
+          </button>
+        }
+
+        <button mat-raised-button color="primary" (click)="openModal()" [disabled]="userPerfil === 'JEFE'" class="compact-btn">
+          <mat-icon>add_circle</mat-icon> <span class="btn-text">Nuevo</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-area">
+  
+        <!-- Advanced Filter Box -->
+        <mat-card class="advanced-filter-card no-print mat-elevation-z2" *ngIf="showAdvancedFilter" style="margin-bottom: 1rem; padding: 1rem; border-left: 4px solid var(--primary-color);">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <mat-icon style="color: var(--primary-color);">date_range</mat-icon>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label>Selecciona un rango prolongado</mat-label>
+              <mat-date-range-input [rangePicker]="rangePicker">
+                <input matStartDate [(ngModel)]="startDate" placeholder="Inicio">
+                <input matEndDate [(ngModel)]="endDate" placeholder="Fin">
+              </mat-date-range-input>
+              <mat-datepicker-toggle matIconSuffix [for]="rangePicker"></mat-datepicker-toggle>
+              <mat-date-range-picker #rangePicker></mat-date-range-picker>
+            </mat-form-field>
+            
+            <button mat-flat-button color="primary" (click)="applyRangeFilter()"><mat-icon>search</mat-icon> Consultar Múltiples Días</button>
+            <button mat-icon-button (click)="toggleAdvancedFilter()" matTooltip="Volver a Búsqueda Diaria"><mat-icon>close</mat-icon></button>
+          </div>
+        </mat-card>
+
+        <!-- Stat Info and Search -->
+        <div class="stat-bar no-print compact hide-on-mobile" style="display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 0.5rem;">
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <div class="counter-chip">
+              <mat-icon>description</mat-icon> <strong>{{ totalRegistros }}</strong>
+            </div>
+            
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 150px;" class="compact-field">
+              <mat-select [ngModel]="selectedTipo()" (ngModelChange)="selectedTipo.set($event); loadData()" placeholder="Tipo Doc">
+                @for(t of tipoOptions; track t) {
+                  <mat-option [value]="t">{{ t }}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>filter_list</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" style="width: 160px;" class="compact-field">
+              <mat-select [ngModel]="selectedArea()" (ngModelChange)="selectedArea.set($event); loadData()" placeholder="Destino">
+                @for(a of areaOptions; track a.value) {
+                  <mat-option [value]="a.value">{{ a.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-icon matPrefix>business</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div style="flex: 1; max-width: 300px; display: flex; gap: 0.5rem; align-items: center;">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-field compact-field" style="flex: 1;">
+              <mat-icon matPrefix>search</mat-icon>
+              <input matInput (input)="searchTerm.set($any($event.target).value)" [value]="searchTerm()" placeholder="Buscar documento...">
+              @if (searchTerm()) {
+                <button matSuffix mat-icon-button (click)="searchTerm.set('')">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
+            
+            <button mat-icon-button [matMenuTriggerFor]="colMenu" matTooltip="Columnas" class="small-icon-btn">
+              <mat-icon>view_column</mat-icon>
+            </button>
+            <mat-menu #colMenu="matMenu">
+              @for(opt of columnOptions; track opt.key) {
+                <button mat-menu-item (click)="$event.stopPropagation()">
+                  <mat-checkbox [(ngModel)]="opt.visible" (change)="updateVisibleColumns()">{{ opt.label }}</mat-checkbox>
+                </button>
+              }
+            </mat-menu>
+          </div>
+        </div>
+
+        <ng-template #mobileFilters>
+          <div class="mobile-filters-container" style="display: flex; flex-direction: column; gap: 12px; padding: 8px 0;">
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field full-width">
+                <mat-icon matPrefix>search</mat-icon>
+                <input matInput (input)="searchTerm.set($any($event.target).value)" [value]="searchTerm()" placeholder="Buscar...">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field full-width">
+                <mat-select [ngModel]="selectedTipo()" (ngModelChange)="selectedTipo.set($event); loadData()" placeholder="Tipo Doc">
+                  @for(t of tipoOptions; track t) {
+                    <mat-option [value]="t">{{ t }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" subscriptSizing="dynamic" class="compact-field full-width">
+                <mat-select [ngModel]="selectedArea()" (ngModelChange)="selectedArea.set($event); loadData()" placeholder="Destino">
+                  @for(a of areaOptions; track a.value) {
+                    <mat-option [value]="a.value">{{ a.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+          </div>
+        </ng-template>
+
+        <!-- Tab Group Wrap -->
+        <mat-tab-group animationDuration="0ms">
+          
+          <!-- Pestaña Principal: Documentos -->
+          <mat-tab label="Trámites (Diario o Rango)">
+            <mat-card class="mat-elevation-z3" style="margin-top: 1rem;">
+              @if (isLoading()) {
+                <div class="loading-overlay">
+                  <div class="spinner"></div>
+                  <span>Cargando trámites...</span>
+                </div>
+              } @else {
+                <div class="table-container">
+                  <table mat-table [dataSource]="dataSource" matSort class="full-width-table">
+
+                    <!-- Checkbox Selection -->
+                    <ng-container matColumnDef="select">
+                      <th mat-header-cell *matHeaderCellDef class="no-print">
+                        <mat-checkbox (change)="$event ? toggleAllRows() : null"
+                                      [checked]="selection.hasValue() && isAllSelected()"
+                                      [indeterminate]="selection.hasValue() && !isAllSelected()">
+                        </mat-checkbox>
+                      </th>
+                      <td mat-cell *matCellDef="let row" class="no-print">
+                        <mat-checkbox (click)="$event.stopPropagation()"
+                                      (change)="$event ? selection.toggle(row) : null"
+                                      [checked]="selection.isSelected(row)">
+                        </mat-checkbox>
+                      </td>
+                    </ng-container>
+
+                    <!-- N° -->
+                    <ng-container matColumnDef="num">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> N° </th>
+                      <td mat-cell *matCellDef="let element; let i = index"> {{ i + 1 }} </td>
+                    </ng-container>
+
+                    <!-- DNI/RUC Remitente -->
+                    <ng-container matColumnDef="dni_ruc_remitente">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> DNI/RUC </th>
+                      <td mat-cell *matCellDef="let element"> <span class="badge">{{element.dni_ruc_remitente}}</span> </td>
+                    </ng-container>
+
+                    <!-- Remitente -->
+                    <ng-container matColumnDef="remitente">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Remitente </th>
+                      <td mat-cell *matCellDef="let element"> <strong>{{element.remitente}}</strong> </td>
+                    </ng-container>
+
+                    <!-- Tipo Documento -->
+                    <ng-container matColumnDef="tipo_documento">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Tipo </th>
+                      <td mat-cell *matCellDef="let element">
+                        <span class="status-chip" [class.dup]="element.tipo_documento==='Oficio'" [class.rev]="element.tipo_documento==='Carta'">
+                          {{element.tipo_documento}}
+                        </span>
+                      </td>
+                    </ng-container>
+
+                    <!-- Número Doc -->
+                    <ng-container matColumnDef="numero_doc">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Nro Doc </th>
+                      <td mat-cell *matCellDef="let element"> {{element.numero_doc}} </td>
+                    </ng-container>
+
+                    <!-- Asunto -->
+                    <ng-container matColumnDef="asunto">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Asunto </th>
+                      <td mat-cell *matCellDef="let element"> {{element.asunto}} </td>
+                    </ng-container>
+
+                    <!-- Area Destino -->
+                    <ng-container matColumnDef="area_destino">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Destino </th>
+                      <td mat-cell *matCellDef="let element"> {{element.area_destino}} </td>
+                    </ng-container>
+
+                    <!-- Estado -->
+                    <ng-container matColumnDef="estado">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Estado </th>
+                      <td mat-cell *matCellDef="let element">
+                        <span class="status-chip"
+                          [class.proc]="element.estado==='RECIBIDO'"
+                          [class.aten]="element.estado==='DERIVADO'"
+                          [class.obs]="element.estado==='ATENDIDO'"
+                          [class.rech]="element.estado==='ARCHIVADO'">
+                          {{element.estado}}
+                        </span>
+                      </td>
+                    </ng-container>
+
+                    <!-- Acciones -->
+                    <ng-container matColumnDef="acciones">
+                      <th mat-header-cell *matHeaderCellDef class="text-right no-print"> Acciones </th>
+                      <td mat-cell *matCellDef="let element" class="text-right no-print">
+                        <button mat-icon-button color="accent" matTooltip="Derivar" 
+                                (click)="marcarComoDerivado(element)" 
+                                *ngIf="['OPERADOR', 'OTI'].includes(userPerfil) && element.estado === 'RECIBIDO'">
+                          <mat-icon>forward</mat-icon>
+                        </button>
+                        <button mat-icon-button color="primary" matTooltip="Atender" 
+                                (click)="marcarComoAtendido(element)" 
+                                *ngIf="['OPERADOR', 'JEFE', 'OTI'].includes(userPerfil) && element.estado === 'DERIVADO'">
+                          <mat-icon>done_all</mat-icon>
+                        </button>
+                        <button mat-icon-button color="primary" matTooltip="Editar" (click)="openModal(element)" *ngIf="canEdit(element)">
+                          <mat-icon>edit</mat-icon>
+                        </button>
+                        <button mat-icon-button color="accent" matTooltip="Ver Detalles" (click)="openModal(element)" *ngIf="!canEdit(element)">
+                          <mat-icon>visibility</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" matTooltip="Eliminar" 
+                                (click)="deleteDocumento(element)" 
+                                *ngIf="canDelete(element)">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="table-row-hover"></tr>
+
+                    <tr class="mat-row" *matNoDataRow>
+                      <td class="mat-cell empty-cell" [attr.colspan]="displayedColumns.length">
+                        <mat-icon>inbox</mat-icon>
+                        <p>No se encontraron documentos.</p>
+                      </td>
+                    </tr>
+
+                  </table>
+                </div>
+                <mat-paginator [pageSizeOptions]="[10, 25, 50, 100]" pageSize="10" showFirstLastButtons></mat-paginator>
+              }
+            </mat-card>
+          </mat-tab>
+
+          <!-- Pestaña Secundaria: Mi Reporte de Actividad -->
+          <mat-tab label="Mi Reporte de Actividad" *ngIf="['OPERADOR', 'JEFE', 'ADMINISTRADOR', 'OTI'].includes(userPerfil)">
+            <mat-card class="mat-elevation-z3" style="margin-top: 1rem;">
+              
+              <div style="padding: 1rem; display: flex; justify-content: flex-end;" class="no-print">
+                <button mat-flat-button color="primary" (click)="exportActivityPDF()">
+                  <mat-icon>picture_as_pdf</mat-icon> Exportar Actividad (PDF)
+                </button>
+              </div>
+
+              <table mat-table [dataSource]="atencionesDataSource" matSort #atencionesSort="matSort">
+                
+                <ng-container matColumnDef="num">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> N° </th>
+                  <td mat-cell *matCellDef="let element; let i = index"> {{ i + 1 }} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="fecha">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Fecha/Hora </th>
+                  <td mat-cell *matCellDef="let element"> {{ element.fecha | date:'dd/MM/yyyy HH:mm:ss' }} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="remitente">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Remitente </th>
+                  <td mat-cell *matCellDef="let element"> {{ element.expand?.expediente_id?.remitente }} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="documento">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Documento </th>
+                  <td mat-cell *matCellDef="let element"> 
+                    {{ element.expand?.expediente_id?.tipo_documento }} {{ element.expand?.expediente_id?.numero_doc }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="asunto">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Asunto </th>
+                  <td mat-cell *matCellDef="let element"> {{ element.expand?.expediente_id?.asunto }} </td>
+                </ng-container>
+
+                <ng-container matColumnDef="estado_actual">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Estado Actual </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span class="status-badge">
+                      {{ element.expand?.expediente_id?.estado || '--' }}
+                    </span>
+                  </td>
+                </ng-container>
+                
+                <ng-container matColumnDef="revertir">
+                  <th mat-header-cell *matHeaderCellDef> Revertir </th>
+                  <td mat-cell *matCellDef="let element">
+                    <button mat-icon-button color="warn" matTooltip="Revertir Acción" 
+                            (click)="revertirAccion(element)">
+                      <mat-icon>undo</mat-icon>
+                    </button>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="atencionesColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: atencionesColumns;"></tr>
+
+                <tr class="mat-row" *matNoDataRow>
+                  <td class="mat-cell" colspan="7" style="padding: 2rem; text-align: center; color: #64748b;">
+                    No hay registros de actividad.
+                  </td>
+                </tr>
+              </table>
+              <mat-paginator #atencionesPaginator [pageSizeOptions]="[5, 10, 25]" showFirstLastButtons aria-label="Seleccionar página atenciones"></mat-paginator>
+            </mat-card>
+          </mat-tab>
+
+        </mat-tab-group>
+
+  </div> <!-- End content padding div -->
+</div>

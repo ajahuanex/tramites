@@ -1,0 +1,94 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a3d62 0%, #3c6382 100%); // Premium dark blue gradient
+  padding: 1rem;
+}
+
+.login-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 450px;
+  gap: 2rem;
+}
+
+.branding {
+  text-align: center;
+  color: white;
+
+  .logo {
+    max-height: 80px;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+  }
+
+  h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.5px;
+  }
+
+  p {
+    margin: 0;
+    opacity: 0.85;
+    font-size: 0.95rem;
+  }
+}
+
+.login-card {
+  border-radius: 12px;
+  overflow: hidden;
+
+  mat-card-header {
+    margin-bottom: 1.5rem;
+    mat-card-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .w-full {
+    width: 100%;
+  }
+
+  .error-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #fee2e2;
+    color: #ef4444;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .actions {
+    margin-top: 1rem;
+    
+    .submit-btn {
+      padding: 1.5rem;
+      font-size: 1.1rem;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.2s ease-in-out;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+    }
+  }
+}

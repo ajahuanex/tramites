@@ -1,0 +1,55 @@
+<div class="page-wrapper fade-in">
+  <div class="header-actions">
+    <div class="titles">
+      <h1>Configuraciones Avanzadas (Nivel OTI)</h1>
+      <p>Gestión de base de datos técnica y parámetros globales de la aplicación</p>
+    </div>
+  </div>
+
+  <div class="settings-grid">
+    <!-- Card 1: Initialization -->
+    <mat-card class="settings-card warning-card mat-elevation-z3">
+      <mat-card-header>
+        <mat-icon mat-card-avatar color="warn">build_circle</mat-icon>
+        <mat-card-title>Inicialización y Diagnóstico BD</mat-card-title>
+        <mat-card-subtitle>Verifica y repara colecciones PocketBase</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          Si corres el software por primera vez o faltan campos de estado/perfil, utiliza esta herramienta. 
+          Recreará o actualizará automáticamente en PocketBase:
+        </p>
+        <ul>
+          <li>La colección <code>operadores</code> (+ campo Perfiles y Visibilidad)</li>
+          <li>La colección <code>expedientes</code> (+ máquina de Estados)</li>
+          <li>La colección <code>historial_expedientes</code> (Auditoría)</li>
+        </ul>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-raised-button color="warn" (click)="openInitModal()">
+          <mat-icon>sync</mat-icon> Sincronizar Esquema
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Card 2: History Viewer Placeholder -->
+    <mat-card class="settings-card mat-elevation-z3">
+      <mat-card-header>
+        <mat-icon mat-card-avatar color="primary">history</mat-icon>
+        <mat-card-title>Auditoría Global (Logs)</mat-card-title>
+        <mat-card-subtitle>Ver todos los eventos registrados</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>
+          Módulo para inspeccionar el historial completo de operaciones a nivel de base de datos.
+          Permite rastrear qué perfil modificó qué expediente en qué momento.
+        </p>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-stroked-button color="primary" routerLink="/auditoria">
+          <mat-icon>launch</mat-icon> Abrir Visor
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,6 @@
+.report-wrapper { padding: 20px; }
+.full-width-table { width: 100%; }
+.badge { background: var(--border-color); color: var(--text-secondary); padding: 4px 8px; border-radius: 4px; font-weight: 500; }
+.status-chip { background: var(--header-color); color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; }
+.obs-cell { max-width: 250px; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }

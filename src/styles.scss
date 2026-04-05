@@ -1,0 +1,270 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$my-theme: mat.define-theme((
+  color: (
+    theme-type: light,
+    primary: mat.$azure-palette,
+  ),
+  typography: (
+    use-system-variables: true,
+  ),
+));
+
+:root {
+  --base-font-size: 16px;
+  --app-bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-header: #f8fafc;
+  --text-primary: #334155;
+  --text-secondary: #64748b;
+  --header-color: #0a3d62;
+  --primary-color: #1a7fbe;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --row-hover: #f1f5f9;
+  --input-bg: #ffffff;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme {
+  --app-bg: #0f172a;
+  --surface: #1e293b;
+  --surface-header: #0f172a;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --header-color: #38bdf8;
+  --primary-color: #38bdf8;
+  --border-color: rgba(255, 255, 255, 0.1);
+  --row-hover: #334155;
+  --input-bg: #1e293b;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+
+  // Deep dark mode overrides for Material components
+  .mat-mdc-card, 
+  .mat-mdc-table, 
+  .mat-mdc-dialog-surface, 
+  .mat-mdc-menu-panel, 
+  .app-header, 
+  .app-sidenav, 
+  .mat-drawer-container,
+  .mat-mdc-paginator,
+  .mat-mdc-tab-header,
+  .mat-mdc-tab-body-wrapper {
+    background-color: var(--surface) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .mat-mdc-header-row {
+    background-color: var(--surface-header) !important;
+    th { color: var(--text-secondary) !important; }
+  }
+
+  .mat-mdc-cell { color: var(--text-primary) !important; }
+  .mat-mdc-paginator { color: var(--text-secondary) !important; }
+  
+  // Form fields in dark mode
+  .mat-mdc-form-field-label, .mat-mdc-select-value, .mat-mdc-select-arrow, .mat-mdc-input-element {
+    color: var(--text-primary) !important;
+  }
+  
+  .mat-mdc-form-field-outline { color: var(--border-color) !important; }
+  
+  .compact-field .mat-mdc-text-field-wrapper {
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+
+  // Status Chips Adaptive in Dark Mode - Higher Specificity
+  .status-chip, .mat-mdc-cell .status-chip {
+    &.obt, &.proc { background-color: rgba(56, 189, 248, 0.2) !important; color: #7dd3fc !important; border-color: rgba(56, 189, 248, 0.4) !important; }
+    &.aten, &.entr { background-color: rgba(34, 197, 94, 0.2) !important; color: #86efac !important; border-color: rgba(34, 197, 94, 0.4) !important; }
+    &.obs { background-color: rgba(245, 158, 11, 0.2) !important; color: #fcd34d !important; border-color: rgba(245, 158, 11, 0.4) !important; }
+    &.rech { background-color: rgba(239, 68, 68, 0.2) !important; color: #fca5a5 !important; border-color: rgba(239, 68, 68, 0.4) !important; }
+    &.impr { background-color: rgba(129, 140, 248, 0.2) !important; color: #a5b4fc !important; border-color: rgba(129, 140, 248, 0.4) !important; }
+    &.rev { background-color: rgba(16, 185, 129, 0.2) !important; color: #6ee7b7 !important; border-color: rgba(16, 185, 129, 0.4) !important; }
+    &.dup { background-color: rgba(236, 72, 153, 0.2) !important; color: #f9a8d4 !important; border-color: rgba(236, 72, 153, 0.4) !important; }
+    &.rec { background-color: rgba(139, 92, 246, 0.2) !important; color: #c4b5fd !important; border-color: rgba(139, 92, 246, 0.4) !important; }
+    &.anul { background-color: rgba(148, 163, 184, 0.2) !important; color: #cbd5e1 !important; border-color: rgba(148, 163, 184, 0.4) !important; }
+  }
+
+  // Ensure ALL table related text is forced to primary in dark mode
+  .mat-mdc-table, .mat-mdc-cell, .mat-mdc-header-cell, .mat-mdc-row, .mat-mdc-header-row {
+    color: var(--text-primary) !important;
+  }
+
+  .counter-chip {
+    background-color: #334155 !important;
+    color: #f1f5f9 !important;
+  }
+
+  // FORCE TAB VISIBILITY
+  .mat-mdc-tab-header, .mat-mdc-tab-group {
+    --mdc-tab-indicator-active-indicator-color: var(--header-color);
+    .mdc-tab__text-label { color: var(--text-primary) !important; font-weight: 600 !important; }
+    .mdc-tab--active .mdc-tab__text-label { color: var(--header-color) !important; }
+  }
+
+  // FORCE SIDEBAR CONTRAST
+  .app-sidenav {
+    .mat-mdc-list-item-title {
+      color: #f8fafc !important; // Bright white-blue
+      font-weight: 500 !important;
+    }
+    .mat-mdc-list-item-icon {
+      color: #38bdf8 !important; // Cyan-blue
+    }
+    .mat-mdc-list-item {
+      &:hover { background-color: rgba(255, 255, 255, 0.05) !important; }
+      &.active-link {
+        background-color: rgba(56, 189, 248, 0.15) !important;
+        .mat-mdc-list-item-title { color: #38bdf8 !important; }
+      }
+    }
+  }
+}
+
+html {
+  @include mat.all-component-themes($my-theme);
+  @include mat.all-component-densities(-3);
+  font-size: var(--base-font-size);
+}
+
+html, body { 
+  height: 100%; 
+  margin: 0; 
+  padding: 0;
+  font-family: 'Roboto', "Helvetica Neue", sans-serif;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Premium Shadows & Depth */
+.mat-mdc-raised-button, .mat-mdc-flat-button {
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform 0.2s, box-shadow 0.2s !important;
+  &:hover:not([disabled]) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md) !important;
+  }
+}
+
+.mat-mdc-card {
+  background-color: var(--surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+/* General Layout Responsive */
+.header-actions.compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+  min-height: 48px;
+  
+  .titles {
+    flex-shrink: 0;
+    h1 { margin: 0; font-size: 1.4rem; font-weight: 700; color: var(--header-color); line-height: 1.1; }
+    .subtitle { margin: 0; font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex: 1;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    
+    .date-picker-mini { 
+      display: flex; 
+      align-items: center; 
+      gap: 4px;
+      mat-form-field { width: 130px !important; margin: 0 !important; } 
+    }
+
+    .button-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+}
+
+.compact-field {
+  .mat-mdc-form-field-flex { height: 32px !important; align-items: center !important; }
+  .mat-mdc-form-field-infix { padding: 0 !important; min-height: 32px !important; display: flex; align-items: center; }
+  .mat-mdc-text-field-wrapper { 
+    padding: 0 12px !important; 
+    background-color: var(--input-bg) !important; 
+    border-radius: 6px !important;
+  }
+}
+
+/* Status Chips - Global & Adaptive */
+.status-chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+
+  // Defaults (Light Mode)
+  &.obt, &.proc { background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+  &.aten, &.entr { background-color: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+  &.obs { background-color: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+  &.rech { background-color: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+  &.impr { background-color: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+  &.rev { background-color: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+  &.dup { background-color: #fce7f3; color: #9d174d; border-color: #fbcfe8; }
+  &.rec { background-color: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
+  &.anul { background-color: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+}
+
+.table-row-hover:hover {
+  background-color: var(--row-hover) !important;
+}
+
+.mat-mdc-header-row {
+  background-color: var(--table-header-bg);
+}
+
+/* Evitar que los íconos de texto se rompan con text-transform */
+.mat-icon { text-transform: none !important; }
+
+.input-upper input, .input-upper textarea { text-transform: uppercase; }
+
+/* Custom Snackbars */
+.success-snackbar { background-color: #059669; color: white; .mat-mdc-button { color: #a7f3d0; } }
+.error-snackbar { background-color: #dc2626; color: white; .mat-mdc-button { color: #fecaca; } }
+
+/* Animations */
+.fade-in { animation: fadeIn 0.4s ease-out forwards; }
+.blur-in { animation: blurIn 0.4s ease-out forwards; }
+.slide-up { animation: slideUp 0.3s ease-out forwards; }
+
+@keyframes blurIn { 0% { opacity: 0; filter: blur(4px); transform: translateY(10px); } 100% { opacity: 1; filter: blur(0); transform: translateY(0); } }
+@keyframes slideUp { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+/* Desktop overrides for specific spacing */
+@media (max-width: 900px) {
+  .btn-text { display: none; }
+  .header-actions.compact {
+    flex-wrap: wrap; gap: 0.25rem;
+    .titles { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+    .header-controls { 
+      width: 100%; flex-wrap: nowrap; gap: 0.4rem; justify-content: flex-start;
+      .date-picker-mini { width: 130px; mat-form-field { width: 100% !important; } }
+      .button-group { flex: 1; display: flex; gap: 4px; .compact-btn { flex: 1; padding: 0 8px !important; } }
+    }
+  }
+}

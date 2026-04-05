@@ -1,0 +1,85 @@
+<h2 mat-dialog-title>
+  {{ isEditMode ? 'Editar Operador' : 'Nuevo Operador' }}
+</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="operador-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>DNI</mat-label>
+      <input matInput formControlName="dni" placeholder="Ej. 12345678" maxlength="8">
+      <mat-icon matPrefix>badge</mat-icon>
+      @if (form.controls.dni.hasError('pattern') && form.controls.dni.touched) {
+        <mat-error>El DNI debe tener 8 dígitos</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Nombres y Apellidos Completos</mat-label>
+      <input matInput formControlName="nombre" placeholder="Ej. PEREZ QUISPE JUAN JOSE">
+      <mat-icon matPrefix>person</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Correo Electrónico</mat-label>
+      <input matInput formControlName="email" type="email" placeholder="ejemplo@transportespuno.com">
+      <mat-icon matPrefix>email</mat-icon>
+      @if (form.controls.email.hasError('email') && form.controls.email.touched) {
+        <mat-error>Ingresa un correo electrónico válido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Perfil de Acceso (Privilegios)</mat-label>
+      <mat-select formControlName="perfil">
+        @for (p of perfiles; track p) {
+          <mat-option [value]="p">{{ p }}</mat-option>
+        }
+      </mat-select>
+      <mat-icon matPrefix>admin_panel_settings</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Sede Asignada</mat-label>
+      <mat-select formControlName="sede">
+        @for (s of sedes; track s) {
+          <mat-option [value]="s">{{ s }}</mat-option>
+        }
+      </mat-select>
+      <mat-icon matPrefix>place</mat-icon>
+    </mat-form-field>
+
+    <div class="password-note" *ngIf="isEditMode">
+      <mat-icon>info</mat-icon>
+      <span>Deja la contraseña en blanco si no deseas cambiarla.</span>
+    </div>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Contraseña</mat-label>
+      <input matInput formControlName="password" [type]="hidePassword() ? 'password' : 'text'" autocomplete="new-password">
+      <mat-icon matPrefix>lock</mat-icon>
+      <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
+        <mat-icon>{{hidePassword() ? 'visibility_off' : 'visibility'}}</mat-icon>
+      </button>
+      @if (form.controls.password.hasError('minlength')) {
+        <mat-error>Mínimo 8 caracteres</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Confirmar Contraseña</mat-label>
+      <input matInput formControlName="passwordConfirm" [type]="hidePassword() ? 'password' : 'text'" autocomplete="new-password">
+      <mat-icon matPrefix>lock</mat-icon>
+      @if (form.hasError('mustMatch') && form.controls.passwordConfirm.touched) {
+        <mat-error>Las contraseñas no coinciden</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="isLoading()">Cancelar</button>
+  <button mat-flat-button color="primary" [disabled]="form.invalid || isLoading()" (click)="onSubmit()">
+    @if (isLoading()) { <span>Guardando...</span> }
+    @else { <span>{{ isEditMode ? 'Guardar Cambios' : 'Crear Operador' }}</span> }
+  </button>
+</mat-dialog-actions>

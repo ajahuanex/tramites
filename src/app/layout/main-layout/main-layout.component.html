@@ -1,0 +1,172 @@
+<mat-sidenav-container class="sidenav-container">
+  
+  <mat-sidenav #sidenav 
+               [mode]="isHandset() ? 'over' : 'side'" 
+               [opened]="!isHandset()" 
+               [class.app-sidenav]="true" 
+               [class.collapsed]="!isHandset() && isCollapsed()" 
+               class="mat-elevation-z4">
+    
+    <div class="sidenav-header">
+      <div class="mobile-close" *ngIf="isHandset()">
+        <button mat-icon-button (click)="sidenav.close()"><mat-icon>close</mat-icon></button>
+      </div>
+      
+      <!-- Logo Principal: Centrado y de buen tamaño -->
+      <div class="logo-wrapper" *ngIf="!isHandset() && !isCollapsed() || isHandset()">
+        <img src="assets/img/logo-drtcp.svg" alt="Logo DRTC-P" class="sidenav-logo">
+        <div class="brand-text">
+          <h2>Trámites</h2>
+          <span>Documentario</span>
+        </div>
+      </div>
+      
+      <!-- Mini Logo para modo colapsado -->
+      <img src="assets/img/logo-drpcp.png" alt="Mini Logo" class="sidenav-logo-mini" 
+           *ngIf="!isHandset() && isCollapsed()" 
+           matTooltip="DRTC Puno">
+    </div>
+
+    <mat-nav-list>
+      @if (authService.currentUser(); as user) {
+        <!-- Dashboard para todos -->
+        <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link" [routerLinkActiveOptions]="{exact: true}" [matTooltip]="isCollapsed() ? 'Dashboard' : ''">
+          <mat-icon matListItemIcon>dashboard</mat-icon>
+          <span matListItemTitle *ngIf="!isCollapsed()">Dashboard</span>
+        </a>
+
+        <!-- Gestión de Trámites (Mesa de Partes / Operador) -->
+        @if (user?.['perfil'] === 'MESA_PARTES' || user?.['perfil'] === 'OPERADOR' || user?.['perfil'] === 'ADMINISTRADOR' || user?.['perfil'] === 'OTI') {
+          <a mat-list-item routerLink="/gestion-documentos" routerLinkActive="active-link" [matTooltip]="isCollapsed() ? 'Gestión de Trámites' : ''">
+            <mat-icon matListItemIcon>description</mat-icon>
+            <span matListItemTitle *ngIf="!isCollapsed()">Gestión de Trámites</span>
+          </a>
+        }
+
+        <!-- Seguimiento y Reportes (Operador / Jefe) -->
+        @if (user?.['perfil'] === 'OPERADOR' || user?.['perfil'] === 'JEFE' || user?.['perfil'] === 'ADMINISTRADOR' || user?.['perfil'] === 'OTI') {
+          <a mat-list-item routerLink="/reportes/diario" routerLinkActive="active-link" [matTooltip]="isCollapsed() ? 'Seguimiento' : ''">
+            <mat-icon matListItemIcon>track_changes</mat-icon>
+            <span matListItemTitle *ngIf="!isCollapsed()">Seguimiento</span>
+          </a>
+        }
+
+        <!-- Archivo Central (Jefe / Admin) -->
+        @if (user?.['perfil'] === 'JEFE' || user?.['perfil'] === 'ADMINISTRADOR' || user?.['perfil'] === 'OTI') {
+          <a mat-list-item routerLink="/archivo" routerLinkActive="active-link" [matTooltip]="isCollapsed() ? 'Archivo Central' : ''">
+            <mat-icon matListItemIcon>inventory_2</mat-icon>
+            <span matListItemTitle *ngIf="!isCollapsed()">Archivo Central</span>
+          </a>
+        }
+
+        <!-- Administración de Usuarios -->
+        @if (user?.['perfil'] === 'OTI' || user?.['perfil'] === 'ADMINISTRADOR') {
+          <mat-divider style="margin: 10px 0"></mat-divider>
+          
+          <a mat-list-item routerLink="/operadores" routerLinkActive="active-link" [matTooltip]="isCollapsed() ? 'Personal / Usuarios' : ''">
+            <mat-icon matListItemIcon>manage_accounts</mat-icon>
+            <span matListItemTitle *ngIf="!isCollapsed()">Personal / Usuarios</span>
+          </a>
+
+          <a mat-list-item routerLink="/configuraciones" routerLinkActive="active-link" class="oti-settings-link" [matTooltip]="isCollapsed() ? 'Configuración Sistema' : ''">
+            <mat-icon matListItemIcon>settings_applications</mat-icon>
+            <span matListItemTitle *ngIf="!isCollapsed()">Configuración Sistema</span>
+          </a>
+        }
+      }
+      
+      <!-- Mobile Contextual Filters -->
+      @if (isHandset() && mobileFilterTemplate()) {
+        <mat-divider style="margin: 20px 0 10px 0"></mat-divider>
+        <div class="mobile-filters-nav" style="padding: 0 16px;">
+          <h3 style="font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin-bottom: 12px; font-weight: 600; letter-spacing: 0.5px;">Filtros Disponibles</h3>
+          <ng-container *ngTemplateOutlet="mobileFilterTemplate()"></ng-container>
+        </div>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="app-content-wrapper" [style.margin-left.px]="isHandset() ? 0 : (isCollapsed() ? 70 : 260)">
+    <!-- IMPERSONATION BANNER -->
+    @if (authService.isImpersonating()) {
+      <div class="impersonation-banner mat-elevation-z4 fade-in">
+        <mat-icon>security_update_warning</mat-icon>
+        <span>
+          Estás actuando como <strong>{{ authService.currentUser()?.['nombre'] }}</strong> ({{ authService.currentUser()?.['perfil'] }}). 
+          Los cambios se registrarán a su nombre.
+        </span>
+        <button mat-stroked-button color="warn" (click)="stopImpersonating()">Volver a mi perfil</button>
+      </div>
+    }
+
+    <mat-toolbar color="primary" class="app-header mat-elevation-z2">
+      <button mat-icon-button (click)="toggleSidenav()" matTooltip="Menu">
+        <mat-icon>{{ isHandset() ? 'menu' : (isCollapsed() ? 'menu_open' : 'menu') }}</mat-icon>
+      </button>
+      
+      <div style="flex: 1"></div>
+      
+      <div class="user-context" *ngIf="authService.currentUser() as user" style="margin-left: auto;">
+        <mat-icon>account_circle</mat-icon>
+        <span class="user-name-text hide-on-mobile">{{ user['perfil'] }} | {{ user['nombre'] }}</span>
+      </div>
+
+      <button mat-icon-button [matMenuTriggerFor]="userMenu" matTooltip="Usuario">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu" class="custom-user-menu">
+        <div class="menu-header" *ngIf="authService.currentUser() as user">
+          <span class="profile-role">{{ user?.['perfil'] || 'OPERADOR' }}</span>
+        </div>
+        <mat-divider></mat-divider>
+        
+        <button mat-menu-item (click)="fileInput.click()">
+          <mat-icon>add_a_photo</mat-icon>
+          <span>Cambiar Foto</span>
+        </button>
+        <input type="file" #fileInput hidden accept="image/png, image/jpeg, image/webp" (change)="onFileSelected($event)">
+        
+        <mat-divider></mat-divider>
+        
+        <button mat-menu-item (click)="themeService.toggleMode()">
+          <mat-icon>{{ themeService.currentMode() === 'light' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+          <span>{{ themeService.currentMode() === 'light' ? 'Modo Oscuro' : 'Modo Claro' }}</span>
+        </button>
+        
+        <button mat-menu-item [matMenuTriggerFor]="zoomMenu">
+          <mat-icon>format_size</mat-icon>
+          <span>Tamaño de Letra</span>
+        </button>
+        
+        <mat-divider></mat-divider>
+        
+        <button mat-menu-item (click)="onLogout()">
+          <mat-icon color="warn">logout</mat-icon>
+          <span style="color: #f44336">Cerrar Sesión</span>
+        </button>
+      </mat-menu>
+
+      <mat-menu #zoomMenu="matMenu">
+        <button mat-menu-item (click)="themeService.setFontSize('normal')">
+          <mat-icon *ngIf="themeService.currentFontSize() === 'normal'">check</mat-icon>
+          <span [style.padding-left.px]="themeService.currentFontSize() === 'normal' ? 0 : 40">Normal</span>
+        </button>
+        <button mat-menu-item (click)="themeService.setFontSize('large')">
+          <mat-icon *ngIf="themeService.currentFontSize() === 'large'">check</mat-icon>
+          <span [style.padding-left.px]="themeService.currentFontSize() === 'large' ? 0 : 40">Grande</span>
+        </button>
+        <button mat-menu-item (click)="themeService.setFontSize('xlarge')">
+          <mat-icon *ngIf="themeService.currentFontSize() === 'xlarge'">check</mat-icon>
+          <span [style.padding-left.px]="themeService.currentFontSize() === 'xlarge' ? 0 : 40">Extra Grande</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <router-outlet></router-outlet>
+    </main>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

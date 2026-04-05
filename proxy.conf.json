@@ -1,0 +1,9 @@
+{
+  "/pb-api": {
+    "target": "http://127.0.0.1:8094",
+    "secure": false,
+    "pathRewrite": { "^/pb-api": "" },
+    "changeOrigin": true,
+    "logLevel": "silent"
+  }
+}

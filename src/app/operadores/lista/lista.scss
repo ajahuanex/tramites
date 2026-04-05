@@ -1,0 +1,130 @@
+// We'll reuse styles from diario to keep consistency
+.report-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+.header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+
+  .titles {
+    h1 {
+      font-size: 1.8rem;
+      color: var(--header-color);
+      margin: 0 0 0.5rem 0;
+      font-weight: 700;
+    }
+  
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    .rolling {
+      animation: rotate 1s linear infinite;
+    }
+  }
+}
+
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+.full-width-table {
+  width: 100%;
+}
+
+.mat-mdc-table {
+  background: var(--surface);
+}
+
+.table-row-hover:hover {
+  background-color: var(--row-hover);
+}
+
+.mat-mdc-header-row {
+  background-color: var(--surface-header);
+  
+  th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.mat-mdc-cell {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.text-right {
+  text-align: right;
+  padding-right: 1.5rem;
+}
+
+.badge {
+  background: #e2e8f0;
+  color: #475569;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-chip {
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 3rem !important;
+  color: #64748b;
+  font-style: italic;
+}
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  gap: 1rem;
+  color: #64748b;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(10, 61, 98, 0.1);
+    border-top-color: #0a3d62;
+    border-radius: 50%;
+    animation: rotate 1s linear infinite;
+  }
+}

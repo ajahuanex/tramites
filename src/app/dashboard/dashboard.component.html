@@ -1,0 +1,168 @@
+<div class="report-wrapper dashboard-page fade-in">
+  
+  <header class="dashboard-header mat-elevation-z2">
+    <div class="header-titles">
+      <h1>Panel de Control</h1>
+      <p class="subtitle">Análisis de Gestión Documentaria</p>
+    </div>
+    <div class="header-actions">
+      <button mat-flat-button color="primary" (click)="loadAllStats()" [disabled]="isLoading()">
+        <mat-icon [class.rolling]="isLoading()">refresh</mat-icon>
+        Actualizar Datos
+      </button>
+    </div>
+  </header>
+
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Sincronizando trámites...</span>
+    </div>
+  } @else {
+
+    <!-- OPERATOR VIEW -->
+    @if (authService.currentUser()?.['perfil'] !== 'ADMINISTRADOR' && authService.currentUser()?.['perfil'] !== 'OTI') {
+      <div class="operator-callout">
+        <div class="progress-card mat-elevation-z3">
+          <div class="progress-info">
+            <div class="icon-circle"><mat-icon>trending_up</mat-icon></div>
+            <div class="text">
+              <h2>Mi Actividad Anual</h2>
+              <p>Has gestionado <strong>{{ stats().myAnnualProgress }}</strong> documentos este año</p>
+            </div>
+          </div>
+          <div class="progress-visual">
+            <span class="count">{{ stats().myAnnualProgress }}</span>
+            <span class="label">Acciones</span>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- MULTI-PERIOD TABS -->
+    <mat-tab-group (selectedTabChange)="onTabChange($event)" class="stats-tabs mat-elevation-z1">
+      <mat-tab label="Hoy (Diario)">
+        <div class="tab-content">
+          <p class="period-info">Ingresos de hoy ({{ currentDate | date:'dd/MM/yyyy' }})</p>
+          <ng-container *ngTemplateOutlet="statsLayout; context: { $implicit: stats().daily }"></ng-container>
+        </div>
+      </mat-tab>
+      <mat-tab label="Este Mes">
+        <div class="tab-content">
+          <p class="period-info">Acumulado mensual ({{ currentDate | date:'MMMM yyyy' }})</p>
+          <ng-container *ngTemplateOutlet="statsLayout; context: { $implicit: stats().monthly }"></ng-container>
+        </div>
+      </mat-tab>
+      <mat-tab label="Consolidado Anual">
+        <div class="tab-content">
+          <p class="period-info">Histórico del año {{ currentDate | date:'yyyy' }}</p>
+          <ng-container *ngTemplateOutlet="statsLayout; context: { $implicit: stats().annual }"></ng-container>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+
+    <!-- ANALYTICAL GRID -->
+    @if (authService.currentUser()?.['perfil'] === 'ADMINISTRADOR' || authService.currentUser()?.['perfil'] === 'OTI') {
+      <div class="visual-analytics-section fade-in">
+        <div class="section-header">
+          <h3><mat-icon>analytics</mat-icon> Análisis Visual ({{ activeTab() | uppercase }})</h3>
+        </div>
+        
+        <div class="charts-grid">
+          <mat-card class="chart-card">
+            <mat-card-header><mat-card-title>Estados de Trámite</mat-card-title></mat-card-header>
+            <mat-card-content><div class="chart-container"><canvas #statesChart></canvas></div></mat-card-content>
+          </mat-card>
+
+          <mat-card class="chart-card">
+            <mat-card-header><mat-card-title>Tipos de Documento</mat-card-title></mat-card-header>
+            <mat-card-content><div class="chart-container"><canvas #tramitesChart></canvas></div></mat-card-content>
+          </mat-card>
+
+          <mat-card class="chart-card">
+            <mat-card-header><mat-card-title>Distribución por Áreas</mat-card-title></mat-card-header>
+            <mat-card-content><div class="chart-container"><canvas #sedesChart></canvas></div></mat-card-content>
+          </mat-card>
+
+          <mat-card class="chart-card">
+            <mat-card-header><mat-card-title>Top Operadores</mat-card-title></mat-card-header>
+            <mat-card-content><div class="chart-container"><canvas #operadorChart></canvas></div></mat-card-content>
+          </mat-card>
+        </div>
+
+        <mat-card class="matrix-card">
+          <div class="matrix-header">
+            <h3><mat-icon>grid_view</mat-icon> Matriz de Documentos: Tipo × Estado</h3>
+          </div>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  @for(e of estadoKeys; track e) { <th>{{e}}</th> }
+                  <th class="total-col">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for(row of stats()[activeTab()].matrix; track row.tramite) {
+                  <tr>
+                    <td class="row-label">{{row.tramite}}</td>
+                    @for(e of estadoKeys; track e) { 
+                      <td [class.zero]="(row.estados[e]||0) === 0">{{ row.estados[e] || 0 }}</td> 
+                    }
+                    <td class="total-col">{{row.total}}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </mat-card>
+      </div>
+    }
+  }
+</div>
+
+<!-- REUSABLE STATS TEMPLATE -->
+<ng-template #statsLayout let-data>
+  <div class="summary-cards">
+    <div class="summary-card total">
+      <div class="card-icon"><mat-icon>folder_open</mat-icon></div>
+      <div class="card-data">
+        <span class="value">{{ data.total }}</span>
+        <span class="label">TOTAL DOCUMENTOS</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon"><mat-icon>description</mat-icon></div>
+      <div class="card-data">
+        <span class="value">{{ data.oficios }}</span>
+        <span class="label">OFICIOS</span>
+        <span class="pct">{{ (data.oficios/data.total*100)||0 | number:'1.0-0' }}%</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon"><mat-icon>assignment</mat-icon></div>
+      <div class="card-data">
+        <span class="value">{{ data.memos }}</span>
+        <span class="label">MEMO.</span>
+        <span class="pct">{{ (data.memos/data.total*100)||0 | number:'1.0-0' }}%</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon"><mat-icon>email</mat-icon></div>
+      <div class="card-data">
+        <span class="value">{{ data.cartas }}</span>
+        <span class="label">CARTAS</span>
+        <span class="pct">{{ (data.cartas/data.total*100)||0 | number:'1.0-0' }}%</span>
+      </div>
+    </div>
+    <div class="summary-card">
+      <div class="card-icon"><mat-icon>more_horiz</mat-icon></div>
+      <div class="card-data">
+        <span class="value">{{ data.otros }}</span>
+        <span class="label">OTROS</span>
+        <span class="pct">{{ (data.otros/data.total*100)||0 | number:'1.0-0' }}%</span>
+      </div>
+    </div>
+  </div>
+</ng-template>
