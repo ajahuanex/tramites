@@ -119,15 +119,25 @@ export class AdminAuthModal {
         // Si la tabla no existe o falla, no hacemos nada
       }
 
-      this.log('⏳ Iniciando importación de colecciones...');
-      await adminClient.collections.import(FULL_PB_SCHEMA as any, false).catch(error => {
-        if (error.data) {
-          console.error('[IMPORT ERROR DETAILS]', error.data);
-          this.log(`❌ Detalle de validación: ${JSON.stringify(error.data)}`);
+      this.log('⏳ Sincronizando colecciones una a una...');
+      for (const col of FULL_PB_SCHEMA) {
+        try {
+          // Intentamos obtener la colección para ver si existe
+          const exists = await adminClient.collections.getOne(col.name).catch(() => null);
+          if (exists) {
+            this.log(`  ↻ Actualizando esquema de "${col.name}"...`);
+            await adminClient.collections.update(col.name, col);
+          } else {
+            this.log(`  ➕ Creando tabla "${col.name}"...`);
+            await adminClient.collections.create(col);
+          }
+        } catch (colError: any) {
+           this.log(`  ❌ Falló sincronización de "${col.name}": ${colError.message}`);
+           if (colError.data) {
+             this.log(`     Detalles: ${JSON.stringify(colError.data)}`);
+           }
         }
-        throw error;
-      });
-      
+      }
       this.log('✨ [OPERADORES] Verificando reglas de acceso...');
       // Aseguramos que los operadores puedan entrar con DNI
       await adminClient.collections.update('operadores', {

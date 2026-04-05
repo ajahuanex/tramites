@@ -84,7 +84,8 @@ export class AuthService {
           accion: 'LOGIN',
           detalles: `Inicio de sesión exitoso (DNI: ${dni})`,
           ip_publica: ip,
-          user_agent: userAgent
+          user_agent: userAgent,
+          fecha: new Date().toISOString()
         });
       } catch (logErr) {
         console.warn('[AUTH] No se pudo registrar la auditoría de IP:', logErr);
